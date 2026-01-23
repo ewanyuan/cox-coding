@@ -48,6 +48,8 @@
 - AI帮你打开终端，请求你测试，AI同时观测运行过程
 - 实时向你展示测试结果和改进建议
 - 所有决策基于实际运行数据，而非猜测
+<img width="795" height="588" alt="55ec0557ba3a65b4b09925baa65b5132" src="https://github.com/user-attachments/assets/c7ae88d4-43bb-49e8-9d62-5b0aa4bcec3d" />
+
 
 #### 2. 数据驱动规则：只有基于真实数据的规则才有效
 
@@ -74,9 +76,11 @@
 ```
 
 **怎么做？**
-- 在项目运行中埋点采集数据
+- 帮你自动采集数据
 - 基于真实的性能指标、错误率、用户行为数据制定规则
 - 针对你的项目运行数据进行的优化和重构才真正有效
+<img width="951" height="657" alt="7bb5c6d2af37cd140f1f92186c492ed3" src="https://github.com/user-attachments/assets/9ebc24c0-4d04-4dc7-b04c-03b42c0582ae" />
+
 
 #### 3. 系统化人机共识：可视化看板替代零碎操作
 
@@ -100,8 +104,12 @@
 - 批量生成改进计划，而不是零散地一个问题接一个问题
 - 可视化看板展示项目全局状态
 - 重构时自动识别并保护你已经满意的功能
+<img width="2156" height="1344" alt="584be59e56e7e275447d8ae893994ca6" src="https://github.com/user-attachments/assets/8f1179b7-1938-4ab9-8c2d-bf355cb64abf" />
+<img width="2145" height="1287" alt="57f154f900cd4dad81c6a3684cd2e524" src="https://github.com/user-attachments/assets/bf7cef9d-c1c8-47e2-a09f-e3e62d7cd890" />
+<img width="2127" height="1346" alt="90552d30ef137d640218f6d9be6e78d6" src="https://github.com/user-attachments/assets/4d076e4d-a3a2-4213-ac01-af65eed0c239" />
 
 ---
+
 
 ## 技能体系：自我组合与自我进化
 
@@ -142,7 +150,6 @@
 **私域知识沉淀**：
 - 随着技能的自我成长，你的项目专属知识（架构决策、性能基线、错误模式）也在沉淀
 - 这些知识会成为技能未来的决策依据，让AI越来越懂你的项目
-
 ---
 
 ## 四大技能一览
