@@ -150,6 +150,8 @@
 **私域知识沉淀**：
 - 随着技能的自我成长，你的项目专属知识（架构决策、性能基线、错误模式）也在沉淀
 - 这些知识会成为技能未来的决策依据，让AI越来越懂你的项目
+<img width="1794" height="657" alt="7f8794b6e56894ea9adb6e98ed998dd8" src="https://github.com/user-attachments/assets/cb01b023-b7dd-4e27-85f8-e44ae673a816" />
+
 ---
 
 ## 四大技能一览
