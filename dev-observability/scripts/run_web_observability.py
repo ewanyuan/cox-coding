@@ -1,38 +1,36 @@
 #!/usr/bin/env python3
 """
-可观测Web服务器（中等方案）
-提供本地Web界面展示可观测数据
+Modern Observability Web Dashboard (Premium UI)
+基于 Flask 和 Tailwind CSS 构建的现代化可观测仪表板 - 支持中英文切换
 """
 
 import json
 import os
+import sys
+import io
 import argparse
+import time
 from pathlib import Path
 from datetime import datetime
 from flask import Flask, render_template_string, jsonify
-import time
 
+# 修复 Windows 编码问题
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 class ObservabilityData:
-    """可观测数据管理"""
-
+    """可观测数据管理 (已优化)"""
     def __init__(self, project_file, app_file, test_file):
-        self.project_file = project_file
-        self.app_file = app_file
-        self.test_file = test_file
+        self.files = {
+            'project': project_file,
+            'app': app_file,
+            'test': test_file
+        }
         self.last_modified = {}
         self._cache = {}
 
     def load_if_changed(self):
-        """如果文件已修改则重新加载"""
-        files = {
-            'project': self.project_file,
-            'app': self.app_file,
-            'test': self.test_file
-        }
-
         changed = False
-        for name, path in files.items():
+        for name, path in self.files.items():
             try:
                 mtime = os.path.getmtime(path)
                 if name not in self.last_modified or mtime > self.last_modified[name]:
@@ -41,788 +39,648 @@ class ObservabilityData:
                         self._cache[name] = json.load(f)
                     changed = True
             except Exception as e:
-                print(f"加载文件 {path} 失败: {e}")
-
+                print(f"Error loading {path}: {e}")
         return changed
 
-    def get_project_data(self):
-        """获取项目数据"""
-        if 'project' not in self._cache:
-            self.load_if_changed()
-        return self._cache.get('project', {})
-
-    def get_app_data(self):
-        """获取应用数据"""
-        if 'app' not in self._cache:
-            self.load_if_changed()
-        return self._cache.get('app', {})
-
-    def get_test_data(self):
-        """获取测试数据"""
-        if 'test' not in self._cache:
-            self.load_if_changed()
-        return self._cache.get('test', {})
-
     def get_all_data(self):
-        """获取所有数据"""
         self.load_if_changed()
         return {
-            'project': self.get_project_data(),
-            'app': self.get_app_data(),
-            'test': self.get_test_data(),
-            'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            'project': self._cache.get('project', {}),
+            'app': self._cache.get('app', {}),
+            'test': self._cache.get('test', {}),
+            'last_updated': datetime.now().strftime('%H:%M:%S')
         }
 
-
-# 创建Flask应用
 app = Flask(__name__)
-
-# 全局数据管理器
 data_manager = None
 
-
 def get_dashboard_html():
-    """获取仪表板HTML模板"""
+    """现代化 UI 模板 - 采用 Tailwind CSS 和 Lucid Icons (中文默认 & 语言切换)"""
     return """
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>开发阶段可观测系统</title>
+    <title>Cox coding-透明流畅的交互体验</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
-                         'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
+            font-family: 'Plus Jakarta Sans', 'Noto Sans SC', sans-serif;
+            background-color: #09090b;
+            color: #fafafa;
         }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
+        .glass-card {
+            background: rgba(24, 24, 27, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(39, 39, 42, 1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
+        .glass-card:hover {
+            border-color: rgba(63, 63, 70, 1);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
         }
-
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
+        .gradient-text {
+            background: linear-gradient(135deg, #3b82f6 0%, #2dd4bf 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
-
-        .header p {
-            font-size: 1.1em;
-            opacity: 0.9;
-        }
-
-        .auto-refresh {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 8px 16px;
-            border-radius: 20px;
-            display: inline-block;
-            margin-top: 15px;
-            font-size: 0.9em;
-        }
-
-        .content {
-            padding: 30px;
-        }
-
-        .section {
-            margin-bottom: 40px;
-        }
-
-        .section-title {
-            font-size: 1.8em;
-            color: #333;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 3px solid #667eea;
-        }
-
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .card {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-            border-left: 4px solid #667eea;
-        }
-
-        .card h3 {
-            color: #667eea;
-            margin-bottom: 15px;
-            font-size: 1.3em;
-        }
-
-        .info-item {
-            margin-bottom: 10px;
-            padding: 8px;
-            background: white;
-            border-radius: 5px;
-        }
-
-        .info-label {
-            font-weight: bold;
-            color: #555;
-            margin-right: 8px;
-        }
-
-        .info-value {
-            color: #333;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.85em;
-            font-weight: 500;
-        }
-
-        .status-not_started { background: #e9ecef; color: #6c757d; }
-        .status-in_progress { background: #cce5ff; color: #004085; }
-        .status-completed { background: #d4edda; color: #155724; }
-        .status-delayed { background: #f8d7da; color: #721c24; }
-
-        .status-pending { background: #fff3cd; color: #856404; }
-        .status-developed { background: #cce5ff; color: #004085; }
-        .status-confirmed { background: #d4edda; color: #155724; }
-        .status-optimized { background: #d1ecf1; color: #0c5460; }
-
-        .priority-low { background: #d4edda; color: #155724; }
-        .priority-medium { background: #fff3cd; color: #856404; }
-        .priority-high { background: #f8d7da; color: #721c24; }
-        .priority-critical { background: #dc3545; color: white; }
-
-        .table-container {
-            overflow-x: auto;
-            margin-top: 15px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            border-radius: 5px;
-            overflow: hidden;
-        }
-
-        th {
-            background: #667eea;
-            color: white;
-            padding: 12px;
-            text-align: left;
-            font-weight: 600;
-        }
-
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        tr:hover {
-            background: #f8f9fa;
-        }
-
-        .progress-bar {
-            background: #e9ecef;
-            height: 20px;
-            border-radius: 10px;
-            overflow: hidden;
-            margin-top: 5px;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            transition: width 0.3s ease;
-        }
-
-        .progress-text {
-            text-align: center;
-            font-size: 0.85em;
-            color: white;
-            line-height: 20px;
-        }
-
-        .summary-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 2.5em;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            font-size: 0.9em;
-            opacity: 0.9;
-        }
-
-        .anomaly-card {
-            border-left-color: #dc3545;
-        }
-
-        .severity-low { background: #d4edda; color: #155724; }
-        .severity-medium { background: #fff3cd; color: #856404; }
-        .severity-high { background: #f8d7da; color: #721c24; }
-        .severity-critical { background: #dc3545; color: white; }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #666;
-        }
-
-        .refresh-btn {
-            background: white;
-            color: #667eea;
-            border: 2px solid #667eea;
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.9em;
-            margin-left: 15px;
-            transition: all 0.3s ease;
-        }
-
-        .refresh-btn:hover {
-            background: #667eea;
-            color: white;
-        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #09090b; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>开发阶段可观测系统</h1>
-            <p id="project-name">加载中...</p>
-            <div class="auto-refresh">
-                最后更新: <span id="last-updated">-</span>
-                <button class="refresh-btn" onclick="refreshData()">立即刷新</button>
-                <span style="margin-left: 10px;">(每30秒自动刷新)</span>
+<body class="p-6 lg:p-10">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-6">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="p-2 bg-blue-600 rounded-lg">
+                        <i data-lucide="activity" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <h1 class="text-3xl font-bold tracking-tight text-white" id="app-title">Cox coding-透明流畅的交互体验</h1>
+                </div>
+                <p class="text-zinc-400 font-medium" id="project-info">正在获取项目状态...</p>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <!-- 语言切换 -->
+                <div class="flex bg-zinc-900/80 rounded-lg p-1 border border-zinc-800">
+                    <button onclick="setLanguage('zh')" id="lang-zh" class="px-3 py-1.5 rounded-md text-xs font-bold transition-all bg-blue-600 text-white">中文</button>
+                    <button onclick="setLanguage('en')" id="lang-en" class="px-3 py-1.5 rounded-md text-xs font-bold transition-all text-zinc-500 hover:text-white">EN</button>
+                </div>
+
+                <div class="flex items-center gap-4 bg-zinc-900/50 p-2 rounded-xl border border-zinc-800">
+                    <div class="px-4 py-2 border-r border-zinc-800">
+                        <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1" id="label-last-update">最后更新</p>
+                        <p class="text-sm font-mono text-emerald-400" id="last-updated">00:00:00</p>
+                    </div>
+                    <button onclick="refreshData()" class="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg font-semibold hover:bg-zinc-200 transition-colors">
+                        <i data-lucide="refresh-cw" class="w-4 h-4" id="refresh-icon"></i>
+                        <span id="btn-refresh">刷新</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Top Metrics -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10" id="top-metrics">
+            <!-- 动态内容 -->
+        </div>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Left Column: Tasks & Progress -->
+            <div class="lg:col-span-8 space-y-6">
+                <div class="glass-card rounded-2xl p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-lg font-bold flex items-center gap-2">
+                            <i data-lucide="list-todo" class="text-blue-400"></i> 
+                            <span id="title-tasks">进行中的任务</span>
+                        </h2>
+                        <span class="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded" id="task-count">0 任务</span>
+                    </div>
+                    <div class="space-y-3" id="task-list">
+                        <!-- 动态内容 -->
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-6">
+                    <h2 class="text-lg font-bold flex items-center gap-2 mb-6">
+                        <i data-lucide="layers" class="text-emerald-400"></i> 
+                        <span id="title-modules">模块成熟度</span>
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="module-grid">
+                        <!-- 动态内容 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Tests & Anomalies -->
+            <div class="lg:col-span-4 space-y-6">
+                <div class="glass-card rounded-2xl p-6 border-l-4 border-l-amber-500">
+                    <h2 class="text-lg font-bold flex items-center gap-2 mb-6">
+                        <i data-lucide="shield-check" class="text-amber-500"></i> 
+                        <span id="title-coverage">测试覆盖率</span>
+                    </h2>
+                    <div class="space-y-6" id="test-suites">
+                        <!-- 动态内容 -->
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-6 bg-red-500/5 border-red-500/20">
+                    <h2 class="text-lg font-bold flex items-center gap-2 mb-4 text-red-400">
+                        <i data-lucide="alert-triangle"></i> 
+                        <span id="title-anomalies">活跃异常</span>
+                    </h2>
+                    <div class="space-y-3" id="anomaly-list">
+                        <!-- 动态内容 -->
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="content">
-            <!-- 摘要统计 -->
-            <div class="section">
-                <h2 class="section-title">项目摘要</h2>
-                <div class="summary-stats" id="summary-stats">
-                    <div class="loading">加载中...</div>
+        <!-- New Features Section -->
+        <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="glass-card rounded-2xl p-6">
+                <h2 class="text-lg font-bold flex items-center gap-2 mb-6">
+                    <i data-lucide="lightbulb" class="text-yellow-400"></i> 
+                    <span id="title-assumptions">假设验证分析</span>
+                </h2>
+                <div class="space-y-3" id="assumptions-list">
+                    <!-- 动态内容 -->
                 </div>
             </div>
 
-            <!-- 项目维度 -->
-            <div class="section">
-                <h2 class="section-title">项目维度</h2>
-                <div class="card-grid" id="project-section">
-                    <div class="loading">加载中...</div>
+            <div class="glass-card rounded-2xl p-6 bg-orange-500/5 border-orange-500/20">
+                <h2 class="text-lg font-bold flex items-center gap-2 mb-6 text-orange-400">
+                    <i data-lucide="alert-octagon"></i> 
+                    <span id="title-risks">风险告警</span>
+                </h2>
+                <div class="space-y-3" id="risk-list">
+                    <!-- 动态内容 -->
                 </div>
             </div>
 
-            <!-- 应用维度 -->
-            <div class="section">
-                <h2 class="section-title">应用维度</h2>
-                <div class="card-grid" id="app-section">
-                    <div class="loading">加载中...</div>
+            <div class="glass-card rounded-2xl p-6 lg:col-span-1">
+                <h2 class="text-lg font-bold flex items-center gap-2 mb-6">
+                    <i data-lucide="trending-up" class="text-green-400"></i> 
+                    <span id="title-perf">性能趋势</span>
+                </h2>
+                <div id="performance-chart" class="h-48">
+                    <canvas id="perf-canvas"></canvas>
                 </div>
             </div>
 
-            <!-- 测试维度 -->
-            <div class="section">
-                <h2 class="section-title">测试维度</h2>
-                <div class="card-grid" id="test-section">
-                    <div class="loading">加载中...</div>
+            <div class="glass-card rounded-2xl p-6 lg:col-span-1">
+                <h2 class="text-lg font-bold flex items-center gap-2 mb-6">
+                    <i data-lucide="users" class="text-purple-400"></i> 
+                    <span id="title-team">团队概览</span>
+                </h2>
+                <div class="space-y-4" id="team-list">
+                    <!-- 动态内容 -->
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        function getStatusClass(status) {
-            const statusMap = {
-                'not_started': 'status-not_started',
-                'in_progress': 'status-in_progress',
-                'completed': 'status-completed',
-                'delayed': 'status-delayed',
-                'pending': 'status-pending',
-                'developed': 'status-developed',
-                'confirmed': 'status-confirmed',
-                'optimized': 'status-optimized'
-            };
-            return statusMap[status] || '';
+        // 语言字典
+        const translations = {
+            zh: {
+                appTitle: 'Cox coding-透明流畅的交互体验',
+                lastUpdate: '最后更新',
+                refresh: '刷新',
+                tasks: '进行中的任务',
+                modules: '模块成熟度',
+                coverage: '测试覆盖率',
+                anomalies: '活跃异常',
+                assumptions: '假设验证分析',
+                risks: '风险告警',
+                perf: '性能趋势',
+                team: '团队概览',
+                metricIterations: '迭代周期',
+                metricTasks: '任务总数',
+                metricPassRate: '测试通过率',
+                metricAnomalies: '系统异常',
+                unassigned: '未分配',
+                completeSuffix: '完成',
+                healthy: '系统状态良好',
+                noAssumptions: '暂无跟踪的假设',
+                noRisks: '当前无活跃风险',
+                noTeam: '暂无团队数据',
+                noPerf: '无可用性能数据',
+                status: {
+                    completed: '已完成',
+                    done: '已完成',
+                    in_progress: '进行中',
+                    todo: '待处理',
+                    not_started: '未开始',
+                    delayed: '延期',
+                    critical: '紧急',
+                    validated: '已验证',
+                    invalidated: '已失效',
+                    pending: '待定'
+                }
+            },
+            en: {
+                appTitle: 'Cox coding - Transparent & Smooth Interactive Experience',
+                lastUpdate: 'LAST UPDATE',
+                refresh: 'Refresh',
+                tasks: 'Active Tasks',
+                modules: 'Module Maturity',
+                coverage: 'Test Coverage',
+                anomalies: 'Active Anomalies',
+                assumptions: 'Assumptions Analysis',
+                risks: 'Risk Alerts',
+                perf: 'Performance Trends',
+                team: 'Team Overview',
+                metricIterations: 'Iterations',
+                metricTasks: 'Total Tasks',
+                metricPassRate: 'Test Pass Rate',
+                metricAnomalies: 'Anomalies',
+                unassigned: 'Unassigned',
+                completeSuffix: 'Complete',
+                healthy: 'System Healthy',
+                noAssumptions: 'No assumptions tracked',
+                noRisks: 'No active risks',
+                noTeam: 'No team data available',
+                noPerf: 'No performance data available',
+                status: {
+                    completed: 'Done',
+                    done: 'Done',
+                    in_progress: 'In Progress',
+                    todo: 'Pending',
+                    not_started: 'Pending',
+                    delayed: 'Delayed',
+                    critical: 'Critical',
+                    validated: 'Validated',
+                    invalidated: 'Invalid',
+                    pending: 'Pending'
+                }
+            }
+        };
+
+        let currentLang = 'zh';
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            
+            // 更新按钮样式
+            const btnZh = document.getElementById('lang-zh');
+            const btnEn = document.getElementById('lang-en');
+            if(lang === 'zh') {
+                btnZh.className = "px-3 py-1.5 rounded-md text-xs font-bold transition-all bg-blue-600 text-white";
+                btnEn.className = "px-3 py-1.5 rounded-md text-xs font-bold transition-all text-zinc-500 hover:text-white";
+                document.documentElement.lang = "zh-CN";
+            } else {
+                btnEn.className = "px-3 py-1.5 rounded-md text-xs font-bold transition-all bg-blue-600 text-white";
+                btnZh.className = "px-3 py-1.5 rounded-md text-xs font-bold transition-all text-zinc-500 hover:text-white";
+                document.documentElement.lang = "en";
+            }
+
+            // 更新静态文本
+            const t = translations[lang];
+            document.getElementById('app-title').textContent = t.appTitle;
+            document.getElementById('label-last-update').textContent = t.lastUpdate;
+            document.getElementById('btn-refresh').textContent = t.refresh;
+            document.getElementById('title-tasks').textContent = t.tasks;
+            document.getElementById('title-modules').textContent = t.modules;
+            document.getElementById('title-coverage').textContent = t.coverage;
+            document.getElementById('title-anomalies').textContent = t.anomalies;
+            document.getElementById('title-assumptions').textContent = t.assumptions;
+            document.getElementById('title-risks').textContent = t.risks;
+            document.getElementById('title-perf').textContent = t.perf;
+            document.getElementById('title-team').textContent = t.team;
+
+            // 重新渲染UI
+            if(window.lastData) renderUI(window.lastData);
         }
 
-        function getPriorityClass(priority) {
-            const priorityMap = {
-                'low': 'priority-low',
-                'medium': 'priority-medium',
-                'high': 'priority-high',
-                'critical': 'priority-critical'
-            };
-            return priorityMap[priority] || '';
+        const statusConfig = {
+            'completed': { bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
+            'done': { bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
+            'in_progress': { bg: 'bg-blue-500/10', text: 'text-blue-400' },
+            'todo': { bg: 'bg-zinc-800', text: 'text-zinc-400' },
+            'not_started': { bg: 'bg-zinc-800', text: 'text-zinc-400' },
+            'delayed': { bg: 'bg-red-500/10', text: 'text-red-400' },
+            'critical': { bg: 'bg-red-500', text: 'text-white' },
+            'validated': { bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
+            'invalidated': { bg: 'bg-red-500/10', text: 'text-red-400' },
+            'pending': { bg: 'bg-yellow-500/10', text: 'text-yellow-400' }
+        };
+
+        function getStatusBadge(status) {
+            const key = status.toLowerCase();
+            const cfg = statusConfig[key] || { bg: 'bg-zinc-800', text: 'text-zinc-400' };
+            const label = translations[currentLang].status[key] || status;
+            return `<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${cfg.bg} ${cfg.text}">${label}</span>`;
         }
 
-        function getSeverityClass(severity) {
-            const severityMap = {
-                'low': 'severity-low',
-                'medium': 'severity-medium',
-                'high': 'severity-high',
-                'critical': 'severity-critical'
-            };
-            return severityMap[severity] || '';
+        async function refreshData() {
+            const btnIcon = document.getElementById('refresh-icon');
+            btnIcon.classList.add('animate-spin');
+            
+            try {
+                const res = await fetch('/api/data');
+                const data = await res.json();
+                window.lastData = data;
+                renderUI(data);
+            } catch (e) {
+                console.error("Refresh failed", e);
+            } finally {
+                setTimeout(() => btnIcon.classList.remove('animate-spin'), 600);
+            }
         }
 
-        function renderSummary(data) {
-            const project = data.project;
-            const app = data.app;
+        function renderUI(data) {
+            const t = translations[currentLang];
+            document.getElementById('last-updated').textContent = data.last_updated;
+            const p = data.project;
+            const a = data.app;
             const test = data.test;
 
-            const totalIterations = project.iterations.length;
-            const totalTasks = project.iterations.reduce((sum, iter) => sum + iter.tasks.length, 0);
-            const totalModules = app.modules.length;
-            const avgCompletion = app.modules.reduce((sum, m) => sum + (m.completion_rate || 0), 0) / totalModules * 100;
-            const totalTests = test.test_suites.reduce((sum, s) => sum + s.total_tests, 0);
-            const totalPassed = test.test_suites.reduce((sum, s) => sum + s.passed_tests, 0);
-            const testPassRate = totalTests > 0 ? (totalPassed / totalTests * 100).toFixed(1) : 0;
-            const totalAnomalies = test.anomalies.length;
+            // 项目信息
+            document.getElementById('project-info').textContent = `${p.project_name} • v${a.version || '1.0'}`;
 
-            document.getElementById('project-name').textContent = `${project.project_name} - ${app.app_name}`;
-            document.getElementById('summary-stats').innerHTML = `
-                <div class="stat-card">
-                    <div class="stat-value">${totalIterations}</div>
-                    <div class="stat-label">迭代总数</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${totalTasks}</div>
-                    <div class="stat-label">任务总数</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${totalModules}</div>
-                    <div class="stat-label">模块总数</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${avgCompletion.toFixed(1)}%</div>
-                    <div class="stat-label">平均完成率</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${testPassRate}%</div>
-                    <div class="stat-label">测试通过率</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${totalAnomalies}</div>
-                    <div class="stat-label">异常总数</div>
-                </div>
+            // 指标卡片
+            const totalTasks = p.iterations.reduce((sum, iter) => sum + iter.tasks.length, 0);
+            const passRate = test.test_suites.length ? (test.test_suites.reduce((s, x) => s + (x.passed_tests/x.total_tests), 0) / test.test_suites.length * 100).toFixed(0) : 0;
+            
+            document.getElementById('top-metrics').innerHTML = `
+                ${renderMetricCard(t.metricIterations, p.iterations.length, 'milestone', 'text-blue-400')}
+                ${renderMetricCard(t.metricTasks, totalTasks, 'check-circle', 'text-emerald-400')}
+                ${renderMetricCard(t.metricPassRate, passRate + '%', 'shield', 'text-amber-400')}
+                ${renderMetricCard(t.metricAnomalies, test.anomalies.length, 'zap', 'text-red-400')}
             `;
-        }
 
-        function renderProjectSection(project) {
-            const iterations = project.iterations.map(iter => {
-                const taskStatus = {};
-                iter.tasks.forEach(task => {
-                    taskStatus[task.status] = (taskStatus[task.status] || 0) + 1;
-                });
-
-                const tasksHtml = iter.tasks.map(task => `
-                    <div class="info-item">
-                        <div><span class="info-label">任务:</span><span class="info-value">${task.task_name}</span></div>
-                        <div style="margin-top: 5px;">
-                            <span class="status-badge ${getStatusClass(task.status)}">${task.status}</span>
-                            ${task.priority ? `<span class="status-badge ${getPriorityClass(task.priority)}" style="margin-left: 5px;">${task.priority}</span>` : ''}
-                            ${task.assignee ? `<span class="info-label" style="margin-left: 10px;">负责人: ${task.assignee}</span>` : ''}
+            // 任务列表
+            const allTasks = p.iterations.flatMap(i => i.tasks);
+            document.getElementById('task-count').textContent = `${allTasks.length} ${t.metricTasks}`;
+            document.getElementById('task-list').innerHTML = allTasks.slice(0, 5).map(task => `
+                <div class="flex items-center justify-between p-4 bg-zinc-900/40 rounded-xl border border-zinc-800/50">
+                    <div class="flex items-center gap-4">
+                        <div class="w-1 h-8 rounded-full ${task.status === 'completed' || task.status === 'done' ? 'bg-emerald-500' : 'bg-blue-500'}"></div>
+                        <div>
+                            <p class="font-semibold text-sm">${task.task_name}</p>
+                            <p class="text-xs text-zinc-500">${task.assignee || t.unassigned}</p>
                         </div>
                     </div>
-                `).join('');
-
-                const assumptionsHtml = iter.assumptions && iter.assumptions.length > 0 ? `
-                    <div style="margin-top: 15px;">
-                        <h4 style="margin-bottom: 10px;">开发假设</h4>
-                        ${iter.assumptions.map(assump => `
-                            <div class="info-item">
-                                <div><span class="info-label">假设:</span><span class="info-value">${assump.description}</span></div>
-                                <div style="margin-top: 5px;">
-                                    <span class="status-badge ${getStatusClass(assump.status)}">${assump.status}</span>
-                                    ${assump.validation_date ? `<span class="info-label" style="margin-left: 10px;">验证日期: ${assump.validation_date}</span>` : ''}
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                ` : '';
-
-                return `
-                    <div class="card">
-                        <h3>${iter.iteration_name}</h3>
-                        <div class="info-item">
-                            <span class="info-label">迭代ID:</span><span class="info-value">${iter.iteration_id}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">状态:</span>
-                            <span class="status-badge ${getStatusClass(iter.status)}">${iter.status}</span>
-                        </div>
-                        ${iter.start_date ? `
-                            <div class="info-item">
-                                <span class="info-label">时间:</span>
-                                <span class="info-value">${iter.start_date} ~ ${iter.end_date || '进行中'}</span>
-                            </div>
-                        ` : ''}
-                        <div class="info-item">
-                            <span class="info-label">任务统计:</span>
-                            <span class="info-value">${JSON.stringify(taskStatus)}</span>
-                        </div>
-                        <div style="margin-top: 15px;">
-                            <h4 style="margin-bottom: 10px;">任务列表 (${iter.tasks.length})</h4>
-                            ${tasksHtml}
-                        </div>
-                        ${assumptionsHtml}
-                    </div>
-                `;
-            }).join('');
-
-            document.getElementById('project-section').innerHTML = iterations;
-        }
-
-        function renderAppSection(app) {
-            const moduleStats = {};
-            app.modules.forEach(m => {
-                moduleStats[m.status] = (moduleStats[m.status] || 0) + 1;
-            });
-
-            const modulesHtml = app.modules.map(m => `
-                <div class="card">
-                    <h3>${m.module_name}</h3>
-                    <div class="info-item">
-                        <span class="info-label">状态:</span>
-                        <span class="status-badge ${getStatusClass(m.status)}">${m.status}</span>
-                    </div>
-                    ${m.owner ? `
-                        <div class="info-item">
-                            <span class="info-label">负责人:</span><span class="info-value">${m.owner}</span>
-                        </div>
-                    ` : ''}
-                    <div class="info-item">
-                        <span class="info-label">完成率:</span>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${(m.completion_rate || 0) * 100}%">
-                                <span class="progress-text">${((m.completion_rate || 0) * 100).toFixed(1)}%</span>
-                            </div>
-                        </div>
-                    </div>
-                    ${m.last_update ? `
-                        <div class="info-item">
-                            <span class="info-label">最后更新:</span><span class="info-value">${m.last_update}</span>
-                        </div>
-                    ` : ''}
-                    ${m.notes ? `
-                        <div class="info-item">
-                            <span class="info-label">备注:</span><span class="info-value">${m.notes}</span>
-                        </div>
-                    ` : ''}
+                    <div>${getStatusBadge(task.status)}</div>
                 </div>
             `).join('');
 
-            const statsHtml = `
-                <div class="card">
-                    <h3>模块状态统计</h3>
-                    ${Object.entries(moduleStats).map(([status, count]) => `
-                        <div class="info-item">
-                            <span class="status-badge ${getStatusClass(status)}">${status}</span>
-                            <span class="info-value" style="margin-left: 10px;">${count} 个模块</span>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-
-            document.getElementById('app-section').innerHTML = statsHtml + modulesHtml;
-        }
-
-        function renderTestSection(test) {
-            const suitesHtml = test.test_suites.map(suite => {
-                const passRate = suite.total_tests > 0 ? (suite.passed_tests / suite.total_tests * 100).toFixed(1) : 0;
-                return `
-                    <div class="card">
-                        <h3>${suite.suite_name}</h3>
-                        <div class="info-item">
-                            <span class="info-label">总计:</span><span class="info-value">${suite.total_tests}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">通过:</span><span class="info-value">${suite.passed_tests}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">失败:</span><span class="info-value">${suite.failed_tests}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">跳过:</span><span class="info-value">${suite.skipped_tests}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">通过率:</span><span class="info-value">${passRate}%</span>
-                        </div>
-                        ${suite.coverage !== undefined ? `
-                            <div class="info-item">
-                                <span class="info-label">覆盖率:</span><span class="info-value">${(suite.coverage * 100).toFixed(1)}%</span>
-                            </div>
-                        ` : ''}
-                        <div class="info-item">
-                            <span class="info-label">最后运行:</span><span class="info-value">${suite.last_run}</span>
-                        </div>
+            // 模块成熟度
+            document.getElementById('module-grid').innerHTML = a.modules.map(m => `
+                <div class="p-4 bg-zinc-900/40 rounded-xl border border-zinc-800/50">
+                    <div class="flex justify-between items-start mb-3">
+                        <p class="font-bold text-sm text-zinc-200">${m.module_name}</p>
+                        ${getStatusBadge(m.status)}
                     </div>
-                `;
-            }).join('');
-
-            const tracingPointsHtml = `
-                <div class="card">
-                    <h3>埋点状态</h3>
-                    ${test.tracing_points.map(p => `
-                        <div class="info-item">
-                            <div><span class="info-label">模块:</span><span class="info-value">${p.module}</span></div>
-                            <div><span class="info-label">位置:</span><span class="info-value">${p.location}</span></div>
-                            <div style="margin-top: 5px;">
-                                <span class="status-badge ${getStatusClass(p.status)}">${p.status}</span>
-                                <span class="status-badge" style="margin-left: 5px;">${p.metric_type}</span>
-                            </div>
-                        </div>
-                    `).join('')}
+                    <div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                        <div class="bg-blue-500 h-full" style="width: ${(m.completion_rate || 0)*100}%"></div>
+                    </div>
+                    <p class="text-[10px] text-zinc-500 mt-2 font-mono uppercase">${((m.completion_rate || 0)*100).toFixed(0)}% ${t.completeSuffix}</p>
                 </div>
-            `;
+            `).join('');
 
-            const anomaliesHtml = test.anomalies.length > 0 ? `
-                <div class="card anomaly-card">
-                    <h3>异常列表 (${test.anomalies.length})</h3>
-                    ${test.anomalies.map(a => `
-                        <div class="info-item">
-                            <div><span class="info-label">类型:</span><span class="info-value">${a.type}</span></div>
-                            <div><span class="info-label">描述:</span><span class="info-value">${a.description}</span></div>
-                            <div style="margin-top: 5px;">
-                                <span class="status-badge ${getSeverityClass(a.severity)}">${a.severity}</span>
-                                <span class="status-badge ${getStatusClass(a.status)}" style="margin-left: 5px;">${a.status}</span>
-                            </div>
-                            <div><span class="info-label">发生次数:</span><span class="info-value">${a.occurrence_count}</span></div>
-                            <div><span class="info-label">时间:</span><span class="info-value">${a.first_occurred} ~ ${a.last_occurred}</span></div>
-                        </div>
-                    `).join('')}
-                </div>
-            ` : `
-                <div class="card">
-                    <h3>异常列表</h3>
-                    <div class="info-item">
-                        <span class="info-value">无异常</span>
+            // 测试套件
+            document.getElementById('test-suites').innerHTML = test.test_suites.map(s => `
+                <div>
+                    <div class="flex justify-between text-sm mb-2 font-semibold">
+                        <span>${s.suite_name}</span>
+                        <span class="text-emerald-400">${(s.passed_tests/s.total_tests*100).toFixed(0)}%</span>
+                    </div>
+                    <div class="flex gap-1 h-2">
+                        <div class="bg-emerald-500 rounded-l-sm" style="flex: ${s.passed_tests}"></div>
+                        <div class="bg-red-500" style="flex: ${s.failed_tests}"></div>
+                        <div class="bg-zinc-700 rounded-r-sm" style="flex: ${s.skipped_tests}"></div>
                     </div>
                 </div>
-            `;
+            `).join('');
 
-            document.getElementById('test-section').innerHTML = suitesHtml + tracingPointsHtml + anomaliesHtml;
+            // 异常
+            document.getElementById('anomaly-list').innerHTML = test.anomalies.length
+                ? test.anomalies.map(anom => `
+                    <div class="p-3 bg-red-500/10 rounded-lg border border-red-500/20 text-xs">
+                        <p class="font-bold text-red-400 mb-1 flex items-center justify-between">
+                            ${anom.type}
+                            <span class="opacity-50 font-normal">${anom.last_occurred.split(' ')[1]}</span>
+                        </p>
+                        <p class="text-zinc-400 line-clamp-1">${anom.description}</p>
+                    </div>
+                `).join('')
+                : `<p class="text-zinc-500 text-sm text-center py-4">${t.healthy}</p>`;
+
+            // 假设分析
+            const allAssumptions = p.iterations.flatMap(i => i.assumptions || []);
+            document.getElementById('assumptions-list').innerHTML = allAssumptions.length
+                ? allAssumptions.map(assump => `
+                    <div class="p-3 bg-zinc-900/40 rounded-lg border border-zinc-800/50">
+                        <p class="text-sm font-semibold text-zinc-200 mb-2">${assump.description}</p>
+                        <div class="flex items-center justify-between">
+                            ${getStatusBadge(assump.status)}
+                            ${assump.validation_date ? `<span class="text-[10px] text-zinc-500">${assump.validation_date}</span>` : ''}
+                        </div>
+                    </div>
+                `).join('')
+                : `<p class="text-zinc-500 text-sm text-center py-4">${t.noAssumptions}</p>`;
+
+            // 风险告警 (逻辑保持英文KEY但UI翻译)
+            const risks = analyzeRisks(p, a, test);
+            document.getElementById('risk-list').innerHTML = risks.length
+                ? risks.map(risk => `
+                    <div class="p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="font-bold text-orange-400 text-sm">${risk.level}</span>
+                            <span class="text-[10px] text-zinc-500 uppercase">${risk.category}</span>
+                        </div>
+                        <p class="text-xs text-zinc-300">${risk.message}</p>
+                    </div>
+                `).join('')
+                : `<p class="text-zinc-500 text-sm text-center py-4">${t.noRisks}</p>`;
+
+            // 性能趋势
+            if (test.performance_history && test.performance_history.length > 0) {
+                renderPerformanceChart(test.performance_history);
+            } else {
+                document.getElementById('performance-chart').innerHTML = `<p class="text-zinc-500 text-sm text-center py-8">${t.noPerf}</p>`;
+            }
+
+            // 团队概览
+            const teamStats = analyzeTeamData(p, a);
+            document.getElementById('team-list').innerHTML = Object.keys(teamStats).length
+                ? Object.entries(teamStats).map(([member, stats]) => `
+                    <div class="flex items-center justify-between p-3 bg-zinc-900/40 rounded-lg border border-zinc-800/50">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                                <span class="text-sm font-bold text-purple-400">${member.charAt(0).toUpperCase()}</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-zinc-200">${member}</p>
+                                <p class="text-[10px] text-zinc-500">${stats.tasks} tasks • ${stats.modules} modules</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-lg font-bold text-purple-400">${stats.completion}%</p>
+                            <p class="text-[10px] text-zinc-500 uppercase">${t.completeSuffix}</p>
+                        </div>
+                    </div>
+                `).join('')
+                : `<p class="text-zinc-500 text-sm text-center py-4">${t.noTeam}</p>`;
+
+            lucide.createIcons();
         }
 
-        function refreshData() {
-            fetch('/api/data')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('last-updated').textContent = data.last_updated;
-                    renderSummary(data);
-                    renderProjectSection(data.project);
-                    renderAppSection(data.app);
-                    renderTestSection(data.test);
-                })
-                .catch(error => {
-                    console.error('加载数据失败:', error);
+        function analyzeRisks(project, app, test) {
+            const risks = [];
+            const currentIter = project.iterations.find(i => i.iteration_id === project.current_iteration);
+            const isZh = currentLang === 'zh';
+
+            project.iterations.forEach(iter => {
+                if (iter.status === 'delayed') {
+                    risks.push({
+                        level: 'HIGH', category: isZh ? '排期' : 'Schedule',
+                        message: isZh ? `迭代 ${iter.iteration_name} 已延期` : `Iteration ${iter.iteration_name} delayed`
+                    });
+                }
+            });
+
+            const blockedTasks = currentIter?.tasks.filter(t => t.status === 'blocked') || [];
+            if (blockedTasks.length > 0) {
+                risks.push({
+                    level: 'MEDIUM', category: isZh ? '阻塞' : 'Blockers',
+                    message: isZh ? `${blockedTasks.length} 个任务被阻塞` : `${blockedTasks.length} tasks blocked`
                 });
+            }
+
+            const criticalAnomalies = test.anomalies.filter(a => a.severity === 'critical');
+            if (criticalAnomalies.length > 0) {
+                risks.push({
+                    level: 'CRITICAL', category: isZh ? '质量' : 'Quality',
+                    message: isZh ? `检测到 ${criticalAnomalies.length} 个严重异常` : `${criticalAnomalies.length} critical anomalies detected`
+                });
+            }
+
+            return risks.slice(0, 5);
         }
 
-        // 初始加载
-        refreshData();
+        function analyzeTeamData(project, app) {
+            const teamStats = {};
+            project.iterations.forEach(iter => {
+                iter.tasks.forEach(task => {
+                    if (task.assignee) {
+                        if (!teamStats[task.assignee]) teamStats[task.assignee] = { tasks: 0, modules: 0, completed: 0, total: 0 };
+                        teamStats[task.assignee].tasks++;
+                        teamStats[task.assignee].total++;
+                        if (['done', 'completed'].includes(task.status.toLowerCase())) teamStats[task.assignee].completed++;
+                    }
+                });
+            });
+            app.modules.forEach(m => {
+                if (m.owner) {
+                    if (!teamStats[m.owner]) teamStats[m.owner] = { tasks: 0, modules: 0, completed: 0, total: 0 };
+                    teamStats[m.owner].modules++;
+                }
+            });
+            Object.keys(teamStats).forEach(member => {
+                const s = teamStats[member];
+                s.completion = s.total > 0 ? Math.round((s.completed / s.total) * 100) : 0;
+            });
+            return teamStats;
+        }
 
-        // 自动刷新（30秒）
+        function renderPerformanceChart(perfHistory) {
+            const canvas = document.getElementById('perf-canvas');
+            if(!canvas) return;
+            const ctx = canvas.getContext('2d');
+            canvas.width = canvas.parentElement.offsetWidth;
+            canvas.height = canvas.parentElement.offsetHeight;
+
+            const metricName = perfHistory[0].metrics[0].name;
+            const data = perfHistory.map(h => h.metrics[0].response_time);
+            const labels = perfHistory.map(h => h.timestamp.split(' ')[1]);
+
+            const padding = 40;
+            const chartWidth = canvas.width - padding * 2;
+            const chartHeight = canvas.height - padding * 2;
+            const maxVal = Math.max(...data) * 1.2;
+            const minVal = 0;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#27272a';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const y = padding + (chartHeight / 4) * i;
+                ctx.beginPath(); ctx.moveTo(padding, y); ctx.lineTo(canvas.width - padding, y); ctx.stroke();
+            }
+
+            ctx.strokeStyle = '#22c55e';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            data.forEach((val, i) => {
+                const x = padding + (chartWidth / (data.length - 1)) * i;
+                const y = padding + chartHeight - ((val - minVal) / (maxVal - minVal)) * chartHeight;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+
+            ctx.fillStyle = '#22c55e';
+            data.forEach((val, i) => {
+                const x = padding + (chartWidth / (data.length - 1)) * i;
+                const y = padding + chartHeight - ((val - minVal) / (maxVal - minVal)) * chartHeight;
+                ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+            });
+
+            ctx.fillStyle = '#71717a';
+            ctx.font = '10px monospace';
+            ctx.textAlign = 'center';
+            labels.forEach((label, i) => {
+                if (i % Math.ceil(labels.length / 5) === 0) {
+                    const x = padding + (chartWidth / (labels.length - 1)) * i;
+                    ctx.fillText(label, x, canvas.height - 10);
+                }
+            });
+        }
+
+        function renderMetricCard(label, value, icon, iconColor) {
+            return `
+                <div class="glass-card rounded-2xl p-5 flex items-center gap-5">
+                    <div class="p-3 bg-zinc-900 rounded-xl">
+                        <i data-lucide="${icon}" class="w-6 h-6 ${iconColor}"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">${label}</p>
+                        <p class="text-2xl font-bold text-white">${value}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 初始化
+        setLanguage('zh');
+        refreshData();
         setInterval(refreshData, 30000);
     </script>
 </body>
 </html>
     """
 
-
 @app.route('/')
 def index():
-    """首页"""
     return render_template_string(get_dashboard_html())
-
 
 @app.route('/api/data')
 def get_data():
-    """获取可观测数据API"""
     return jsonify(data_manager.get_all_data())
-
 
 def main():
     global data_manager
-
-    parser = argparse.ArgumentParser(description='可观测Web服务器（中等方案）')
-    parser.add_argument('--project', required=True, help='项目数据文件路径')
-    parser.add_argument('--app', required=True, help='应用状态文件路径')
-    parser.add_argument('--test', required=True, help='测试指标文件路径')
-    parser.add_argument('--output', default='observability.log', help='可观测日志文件路径（与简单方案保持一致）')
-    parser.add_argument('--host', default='127.0.0.1', help='服务器地址')
-    parser.add_argument('--port', type=int, default=5000, help='服务器端口')
-
+    parser = argparse.ArgumentParser(description='Modern Observability Dash')
+    parser.add_argument('--project', required=True, help='Project data path')
+    parser.add_argument('--app', required=True, help='App data path')
+    parser.add_argument('--test', required=True, help='Test metrics path')
+    parser.add_argument('--host', default='127.0.0.1')
+    parser.add_argument('--port', type=int, default=5000)
     args = parser.parse_args()
 
-    # 验证文件存在
-    for file_path in [args.project, args.app, args.test]:
-        if not os.path.exists(file_path):
-            print(f"错误: 文件不存在: {file_path}")
+    # 验证文件
+    for f in [args.project, args.app, args.test]:
+        if not os.path.exists(f):
+            print(f"Error: {f} not found.")
             exit(1)
 
-    # 初始化数据管理器
     data_manager = ObservabilityData(args.project, args.app, args.test)
 
-    # 生成初始的可观测日志（与简单方案格式保持一致）
-    def generate_observability_log():
-        """生成可观测日志"""
-        data = data_manager.get_all_data()
-
-        log_content = f"""{'='*80}
-开发阶段可观测日志
-{'='*80}
-生成时间: {data['last_updated']}
-部署方案: 中等方案（Web界面）
-
-{'='*80}
-一、项目维度
-{'='*80}
-
-当前迭代: {data['project'].get('current_iteration', 'N/A')}
-迭代状态: {data['project'].get('status', 'N/A')}
-开始时间: {data['project'].get('start_date', 'N/A')}
-结束时间: {data['project'].get('end_date', 'N/A')}
-
-任务统计:
-"""
-        tasks = data['project'].get('tasks', [])
-        todo_count = len([t for t in tasks if t.get('status') == 'todo'])
-        in_progress_count = len([t for t in tasks if t.get('status') == 'in-progress'])
-        completed_count = len([t for t in tasks if t.get('status') == 'completed'])
-
-        log_content += f"  待办: {todo_count}\n"
-        log_content += f"  进行中: {in_progress_count}\n"
-        log_content += f"  已完成: {completed_count}\n\n"
-
-        assumptions = data['project'].get('assumptions', [])
-        log_content += f"开发假设: {len(assumptions)} 个\n"
-        for assump in assumptions[:5]:
-            log_content += f"  - {assump.get('assumption_id', 'N/A')}: {assump.get('description', 'N/A')}\n"
-        log_content += "\n"
-
-        log_content += f"""
-{'='*80}
-二、应用维度
-{'='*80}
-
-模块总数: {len(data['app'].get('modules', []))}
-"""
-
-        for module in data['app'].get('modules', [])[:10]:
-            log_content += f"\n模块: {module.get('name', 'N/A')}\n"
-            log_content += f"  状态: {module.get('status', 'N/A')}\n"
-            log_content += f"  描述: {module.get('description', 'N/A')}\n"
-            log_content += f"  最后更新: {module.get('last_updated', 'N/A')}\n"
-
-        log_content += f"""
-{'='*80}
-三、测试维度
-{'='*80}
-
-测试覆盖:
-"""
-        coverage = data['test'].get('test_coverage', {})
-        log_content += f"  总测试数: {coverage.get('total_tests', 0)}\n"
-        log_content += f"  通过数: {coverage.get('passed', 0)}\n"
-        log_content += f"  失败数: {coverage.get('failed', 0)}\n"
-        log_content += f"  通过率: {coverage.get('pass_rate', 0):.1f}%\n\n"
-
-        anomalies = data['test'].get('anomalies', [])
-        log_content += f"异常检测: {len(anomalies)} 条\n"
-        for anomaly in anomalies[:5]:
-            log_content += f"  - {anomaly.get('type', 'N/A')}: {anomaly.get('description', 'N/A')}\n"
-
-        log_content += f"""
-{'='*80}
-四、访问信息
-{'='*80}
-
-Web界面访问: http://{args.host}:{args.port}
-日志文件路径: {os.path.abspath(args.output)}
-自动刷新: 是（每30秒）
-"""
-
-        return log_content
-
-    # 初始生成日志
-    print(f"生成可观测日志: {args.output}")
-    with open(args.output, 'w', encoding='utf-8') as f:
-        f.write(generate_observability_log())
-
-    # 定期更新日志
-    import threading
-
-    def update_log_periodically():
-        """定期更新日志"""
-        while True:
-            time.sleep(30)  # 每30秒更新一次
-            try:
-                if data_manager.load_if_changed():
-                    with open(args.output, 'w', encoding='utf-8') as f:
-                        f.write(generate_observability_log())
-                    print(f"[{datetime.now().strftime('%H:%M:%S')}] 可观测日志已更新")
-            except Exception as e:
-                print(f"更新日志失败: {e}")
-
-    # 启动日志更新线程
-    log_thread = threading.Thread(target=update_log_periodically, daemon=True)
-    log_thread.start()
-
-    # 启动服务器
-    print(f"启动可观测Web服务器...")
-    print(f"项目数据: {args.project}")
-    print(f"应用数据: {args.app}")
-    print(f"测试数据: {args.test}")
-    print(f"可观测日志: {args.output}")
-    print(f"访问地址: http://{args.host}:{args.port}")
-    print(f"按 Ctrl+C 停止服务器")
-
+    print(f"\n🚀 Cox coding-透明流畅的交互体验 已启动!")
+    print(f"🔗 本地地址: http://{args.host}:{args.port}")
+    print(f"📡 监控中: {len(data_manager.files)} 个数据源")
+    
     app.run(host=args.host, port=args.port, debug=False, threaded=True)
-
 
 if __name__ == '__main__':
     main()
