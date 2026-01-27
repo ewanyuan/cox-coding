@@ -32,9 +32,9 @@ python scripts/generate_observability_log.py --project project_data.json --app a
 python scripts/store_to_skill_manager.py deploy \
   --mode simple \
   --config '{
-    "output_path": "/workspace/projects/dev-observability/output.log",
-    "access_method": "cat /workspace/projects/dev-observability/output.log",
-    "manual_path": "/workspace/projects/dev-observability/SKILL.md"
+    "output_path": "/workspace/projects/cox/output.log",
+    "access_method": "cat /workspace/projects/cox/output.log",
+    "manual_path": "/workspace/projects/cox/SKILL.md"
   }'
 ```
 
@@ -48,18 +48,18 @@ storage = SkillStorage(data_path="/workspace/projects/skill-data.json")
 
 skill_config = {
     "deploy_mode": "simple",
-    "output_path": "/workspace/projects/dev-observability/output.log",
-    "access_method": "cat /workspace/projects/dev-observability/output.log",
-    "manual_path": "/workspace/projects/dev-observability/SKILL.md"
+    "output_path": "/workspace/projects/cox/output.log",
+    "access_method": "cat /workspace/projects/cox/output.log",
+    "manual_path": "/workspace/projects/cox/SKILL.md"
 }
 
 execution_logs = [{
     "time": "2024-01-22 12:00:00",
     "level": "INFO",
-    "message": "简单方案部署完成，日志文件: /workspace/projects/dev-observability/output.log"
+    "message": "简单方案部署完成，日志文件: /workspace/projects/cox/output.log"
 }]
 
-storage.save("dev-observability", config=skill_config, logs=execution_logs)
+storage.save("cox", config=skill_config, logs=execution_logs)
 ```
 
 ---
@@ -89,7 +89,7 @@ python scripts/store_to_skill_manager.py deploy \
   --config '{
     "url": "http://localhost:5000",
     "access_method": "浏览器访问 http://localhost:5000",
-    "manual_path": "/workspace/projects/dev-observability/SKILL.md"
+    "manual_path": "/workspace/projects/cox/SKILL.md"
   }'
 ```
 
@@ -105,7 +105,7 @@ skill_config = {
     "deploy_mode": "web",
     "url": "http://localhost:5000",
     "access_method": "浏览器访问 http://localhost:5000",
-    "manual_path": "/workspace/projects/dev-observability/SKILL.md"
+    "manual_path": "/workspace/projects/cox/SKILL.md"
 }
 
 execution_logs = [{
@@ -114,7 +114,7 @@ execution_logs = [{
     "message": "中等方案部署完成，访问地址: http://localhost:5000"
 }]
 
-storage.save("dev-observability", config=skill_config, logs=execution_logs)
+storage.save("cox", config=skill_config, logs=execution_logs)
 ```
 
 ### 重要说明

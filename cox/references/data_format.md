@@ -30,6 +30,13 @@
           "tags": ["标签1", "标签2"]
         }
       ],
+      "modules": [
+        {
+          "module_id": "模块唯一标识",
+          "module_name": "模块名称",
+          "expected_completion": 0.8
+        }
+      ],
       "assumptions": [
         {
           "assumption_id": "假设唯一标识",
@@ -62,6 +69,10 @@
 | iterations[].tasks[].assignee | string | 否 | 负责人 |
 | iterations[].tasks[].priority | string | 否 | 优先级：`low`/`medium`/`high`/`critical` |
 | iterations[].tasks[].tags | array | 否 | 标签列表 |
+| iterations[].modules | array | 是 | 涉及的模块列表 |
+| iterations[].modules[].module_id | string | 是 | 模块唯一标识 |
+| iterations[].modules[].module_name | string | 是 | 模块名称 |
+| iterations[].modules[].expected_completion | number | 是 | 该迭代预期达到的模块完成率（0-1） |
 | iterations[].assumptions | array | 是 | 假设列表 |
 | iterations[].assumptions[].assumption_id | string | 是 | 假设唯一标识 |
 | iterations[].assumptions[].description | string | 是 | 假设描述 |

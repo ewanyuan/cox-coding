@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 """
-Modern Observability Web Dashboard (Premium UI)
-基于 Flask 和 Tailwind CSS 构建的现代化可观测仪表板 - 支持中英文切换
+Modern Observability Dashboard (Static & Web Modes)
+现代化可观测仪表板 - 支持静态生成和 Web 交互两种模式
+
+使用方法:
+  静态模式（无需 Flask）: python run_web_observability.py --mode static --project ... --app ... --test ... --output observability.html
+  Web 模式（需要 Flask）: python run_web_observability.py --mode web --project ... --app ... --test ...
 """
 
 import json
@@ -12,7 +16,13 @@ import argparse
 import time
 from pathlib import Path
 from datetime import datetime
-from flask import Flask, render_template_string, jsonify
+
+# 尝试导入 Flask，如果失败则提示用户
+try:
+    from flask import Flask, render_template_string, jsonify
+    FLASK_AVAILABLE = True
+except ImportError:
+    FLASK_AVAILABLE = False
 
 # 修复 Windows 编码问题
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
@@ -51,8 +61,22 @@ class ObservabilityData:
             'last_updated': datetime.now().strftime('%H:%M:%S')
         }
 
-app = Flask(__name__)
+
+# 全局变量
 data_manager = None
+app = None
+
+# Flask 应用和路由（仅 Web 模式使用）
+if FLASK_AVAILABLE:
+    app = Flask(__name__)
+
+    @app.route('/')
+    def index():
+        return render_template_string(get_dashboard_html())
+
+    @app.route('/api/data')
+    def get_data():
+        return jsonify(data_manager.get_all_data())
 
 def get_dashboard_html():
     """现代化 UI 模板 - 采用 Tailwind CSS 和 Lucid Icons (中文默认 & 语言切换)"""
@@ -91,6 +115,7 @@ def get_dashboard_html():
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #09090b; }
         ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+        .hidden { display: none; }
     </style>
 </head>
 <body class="p-6 lg:p-10">
@@ -139,10 +164,10 @@ def get_dashboard_html():
                 <div class="glass-card rounded-2xl p-6">
                     <div class="flex items-center justify-between mb-6">
                         <h2 class="text-lg font-bold flex items-center gap-2">
-                            <i data-lucide="list-todo" class="text-blue-400"></i> 
-                            <span id="title-tasks">进行中的任务</span>
+                            <i data-lucide="git-merge" class="text-blue-400"></i> 
+                            <span id="title-tasks">迭代管理</span>
                         </h2>
-                        <span class="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded" id="task-count">0 任务</span>
+                        <span class="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded" id="task-count">0 迭代</span>
                     </div>
                     <div class="space-y-3" id="task-list">
                         <!-- 动态内容 -->
@@ -206,7 +231,7 @@ def get_dashboard_html():
                 </div>
             </div>
 
-            <div class="glass-card rounded-2xl p-6 lg:col-span-1">
+            <div class="glass-card rounded-2xl p-6 lg:col-span-1" id="performance-section">
                 <h2 class="text-lg font-bold flex items-center gap-2 mb-6">
                     <i data-lucide="trending-up" class="text-green-400"></i> 
                     <span id="title-perf">性能趋势</span>
@@ -216,7 +241,7 @@ def get_dashboard_html():
                 </div>
             </div>
 
-            <div class="glass-card rounded-2xl p-6 lg:col-span-1">
+            <div class="glass-card rounded-2xl p-6 lg:col-span-1" id="team-section">
                 <h2 class="text-lg font-bold flex items-center gap-2 mb-6">
                     <i data-lucide="users" class="text-purple-400"></i> 
                     <span id="title-team">团队概览</span>
@@ -235,7 +260,7 @@ def get_dashboard_html():
                 appTitle: 'Cox coding-透明流畅的交互体验',
                 lastUpdate: '最后更新',
                 refresh: '刷新',
-                tasks: '进行中的任务',
+                iterations: '迭代管理',
                 modules: '模块成熟度',
                 coverage: '测试覆盖率',
                 anomalies: '活跃异常',
@@ -271,7 +296,7 @@ def get_dashboard_html():
                 appTitle: 'Cox coding - Transparent & Smooth Interactive Experience',
                 lastUpdate: 'LAST UPDATE',
                 refresh: 'Refresh',
-                tasks: 'Active Tasks',
+                iterations: 'Iterations',
                 modules: 'Module Maturity',
                 coverage: 'Test Coverage',
                 anomalies: 'Active Anomalies',
@@ -361,58 +386,182 @@ def get_dashboard_html():
             return `<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${cfg.bg} ${cfg.text}">${label}</span>`;
         }
 
+        // 迭代折叠状态管理
+        let collapsedIterations = new Set();
+
+        function toggleIteration(iterationId) {
+            if (collapsedIterations.has(iterationId)) {
+                collapsedIterations.delete(iterationId);
+            } else {
+                collapsedIterations.add(iterationId);
+            }
+            // 重新渲染 UI
+            if(window.lastData) renderUI(window.lastData);
+        }
+
+        async function loadDataFromLocalFiles() {
+            // 从本地 JSON 文件读取数据（静态模式）
+            // 添加时间戳避免浏览器缓存
+            const timestamp = Date.now();
+            const [projectRes, appRes, testRes] = await Promise.all([
+                fetch('project_data.json?t=' + timestamp),
+                fetch('app_status.json?t=' + timestamp),
+                fetch('test_metrics.json?t=' + timestamp)
+            ]);
+            
+            const project = await projectRes.json();
+            const app = await appRes.json();
+            const test = await testRes.json();
+            
+            return {
+                project: project,
+                app: app,
+                test: test,
+                last_updated: new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit', second: '2-digit'})
+            };
+        }
+
         async function refreshData() {
             const btnIcon = document.getElementById('refresh-icon');
-            btnIcon.classList.add('animate-spin');
+            if(btnIcon) btnIcon.classList.add('animate-spin');
             
             try {
-                const res = await fetch('/api/data');
-                const data = await res.json();
+                // 静态模式：从本地 JSON 文件读取数据
+                const data = await loadDataFromLocalFiles();
                 window.lastData = data;
                 renderUI(data);
             } catch (e) {
                 console.error("Refresh failed", e);
             } finally {
-                setTimeout(() => btnIcon.classList.remove('animate-spin'), 600);
+                if(btnIcon) setTimeout(() => btnIcon.classList.remove('animate-spin'), 600);
             }
         }
 
         function renderUI(data) {
-            const t = translations[currentLang];
-            document.getElementById('last-updated').textContent = data.last_updated;
-            const p = data.project;
-            const a = data.app;
-            const test = data.test;
+            try {
+                const t = translations[currentLang];
+                document.getElementById('last-updated').textContent = data.last_updated;
+                const p = data.project;
+                const a = data.app;
+                const test = data.test;
 
-            // 项目信息
-            document.getElementById('project-info').textContent = `${p.project_name} • v${a.version || '1.0'}`;
+                // 项目信息
+                document.getElementById('project-info').textContent = `${p.project_name} • v${a.version || '1.0'}`;
 
-            // 指标卡片
-            const totalTasks = p.iterations.reduce((sum, iter) => sum + iter.tasks.length, 0);
-            const passRate = test.test_suites.length ? (test.test_suites.reduce((s, x) => s + (x.passed_tests/x.total_tests), 0) / test.test_suites.length * 100).toFixed(0) : 0;
+                // 指标卡片
+                const totalTasks = p.iterations.reduce((sum, iter) => sum + iter.tasks.length, 0);
+                const passRate = test.test_suites.length ? (test.test_suites.reduce((s, x) => s + (x.passed_tests/x.total_tests), 0) / test.test_suites.length * 100).toFixed(0) : 0;
+                const passRateDisplay = isNaN(parseFloat(passRate)) ? '暂未开放' : passRate + '%';
             
             document.getElementById('top-metrics').innerHTML = `
                 ${renderMetricCard(t.metricIterations, p.iterations.length, 'milestone', 'text-blue-400')}
                 ${renderMetricCard(t.metricTasks, totalTasks, 'check-circle', 'text-emerald-400')}
-                ${renderMetricCard(t.metricPassRate, passRate + '%', 'shield', 'text-amber-400')}
+                ${renderMetricCard(t.metricPassRate, passRateDisplay, 'shield', 'text-amber-400')}
                 ${renderMetricCard(t.metricAnomalies, test.anomalies.length, 'zap', 'text-red-400')}
             `;
 
-            // 任务列表
-            const allTasks = p.iterations.flatMap(i => i.tasks);
-            document.getElementById('task-count').textContent = `${allTasks.length} ${t.metricTasks}`;
-            document.getElementById('task-list').innerHTML = allTasks.slice(0, 5).map(task => `
-                <div class="flex items-center justify-between p-4 bg-zinc-900/40 rounded-xl border border-zinc-800/50">
-                    <div class="flex items-center gap-4">
-                        <div class="w-1 h-8 rounded-full ${task.status === 'completed' || task.status === 'done' ? 'bg-emerald-500' : 'bg-blue-500'}"></div>
-                        <div>
-                            <p class="font-semibold text-sm">${task.task_name}</p>
-                            <p class="text-xs text-zinc-500">${task.assignee || t.unassigned}</p>
+            // 迭代列表（按迭代分组显示任务）
+            document.getElementById('task-count').textContent = `${p.iterations.length} ${t.metricIterations}`;
+            document.getElementById('task-list').innerHTML = p.iterations.map(iter => {
+                const completedTasks = iter.tasks.filter(t => t.status === 'completed' || t.status === 'done').length;
+                const progress = iter.tasks.length > 0 ? (completedTasks / iter.tasks.length * 100).toFixed(0) : 0;
+                const isCurrent = iter.iteration_id === p.current_iteration;
+                const isCollapsed = !isCurrent && collapsedIterations.has(iter.iteration_id);
+                
+                return `
+                    <div class="bg-zinc-900/40 rounded-xl border ${isCurrent ? 'border-blue-500/30 bg-blue-500/5' : 'border-zinc-800/50'} overflow-hidden">
+                        <!-- 迭代头部（可点击切换折叠/展开） -->
+                        <div class="p-4 border-b border-zinc-800/50 cursor-pointer hover:bg-zinc-800/30 transition-colors" onclick="toggleIteration('${iter.iteration_id}')">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center gap-3">
+                                    ${isCurrent ? '<span class="text-xs bg-blue-500 text-white px-2 py-0.5 rounded font-medium">当前</span>' : ''}
+                                    <i data-lucide="${isCollapsed ? 'chevron-right' : 'chevron-down'}" class="w-4 h-4 text-zinc-500 transition-transform"></i>
+                                    <h3 class="font-bold text-base text-zinc-200">${iter.iteration_name}</h3>
+                                </div>
+                                ${getStatusBadge(iter.status)}
+                            </div>
+                            <div class="flex items-center gap-4 text-xs text-zinc-500">
+                                <span><i data-lucide="calendar" class="w-3 h-3 inline mr-1"></i>${iter.start_date || '-'} ~ ${iter.end_date || '-'}</span>
+                                <span><i data-lucide="hash" class="w-3 h-3 inline mr-1"></i>${iter.iteration_id}</span>
+                            </div>
                         </div>
+                        
+                        <!-- 迭代进度和任务列表（折叠时隐藏） -->
+                        <div class="${isCollapsed ? 'hidden' : ''}">
+                            <!-- 迭代进度 -->
+                            <div class="px-4 py-3 bg-zinc-900/20">
+                                <div class="flex items-center justify-between text-xs mb-1">
+                                    <span class="text-zinc-400">任务进度</span>
+                                    <span class="text-zinc-300">${completedTasks}/${iter.tasks.length} 已完成 (${progress}%)</span>
+                                </div>
+                                <div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                                    <div class="bg-gradient-to-r from-blue-500 to-emerald-500 h-full transition-all duration-500" style="width: ${progress}%"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- 任务列表 -->
+                            <div class="p-4 space-y-2">
+                                ${iter.tasks.length > 0 ? iter.tasks.map(task => `
+                                    <div class="flex items-center justify-between p-3 bg-zinc-900/40 rounded-lg border border-zinc-800/30 hover:border-zinc-700/50 transition-colors">
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-1.5 h-6 rounded-full ${task.status === 'completed' || task.status === 'done' ? 'bg-emerald-500' : task.status === 'in_progress' ? 'bg-blue-500' : 'bg-zinc-600'}"></div>
+                                            <div class="flex-1">
+                                                <p class="font-medium text-sm text-zinc-200">${task.task_name}</p>
+                                                <div class="flex items-center gap-3 mt-1 text-xs text-zinc-500">
+                                                    <span>${task.task_id}</span>
+                                                    ${task.assignee ? `<span><i data-lucide="user" class="w-3 h-3 inline mr-1"></i>${task.assignee}</span>` : ''}
+                                                    ${task.priority ? `<span class="px-1.5 py-0.5 rounded ${task.priority === 'high' || task.priority === 'critical' ? 'bg-red-500/10 text-red-400' : 'bg-zinc-700/50 text-zinc-400'}">${task.priority}</span>` : ''}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        ${getStatusBadge(task.status)}
+                                    </div>
+                                `).join('') : '<p class="text-sm text-zinc-500 text-center py-4">尚未详细计划</p>'}
+                            </div>
+                        </div>
+                        </div>
+                        
+                        <!-- 涉及的模块（折叠时也显示） -->
+                        ${iter.modules && iter.modules.length > 0 ? `
+                            <div class="px-4 py-3 border-t border-zinc-800/50">
+                                <div class="flex items-center gap-2 text-xs text-zinc-500 mb-2">
+                                    <i data-lucide="layers" class="w-3 h-3"></i>
+                                    <span>涉及的模块 (${iter.modules.length})</span>
+                                </div>
+                                <div class="flex flex-wrap gap-2">
+                                    ${iter.modules.map(mod => `
+                                        <div class="px-3 py-1.5 bg-zinc-900/60 rounded-lg border border-zinc-800/50">
+                                            <p class="text-xs font-medium text-zinc-300">${mod.module_name}</p>
+                                            <p class="text-[10px] text-zinc-500 mt-0.5">预期完成率: ${(mod.expected_completion * 100).toFixed(0)}%</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        <!-- 开发假设（折叠时也显示） -->
+                        ${iter.assumptions && iter.assumptions.length > 0 ? `
+                            <div class="px-4 py-3 border-t border-zinc-800/50">
+                                <div class="flex items-center gap-2 text-xs text-zinc-500 mb-2">
+                                    <i data-lucide="lightbulb" class="w-3 h-3"></i>
+                                    <span>开发假设 (${iter.assumptions.length})</span>
+                                </div>
+                                ${iter.assumptions.slice(0, 2).map(assump => {
+                                    let status = assump.status;
+                                    if (!status && assump.validated !== undefined) {
+                                        status = assump.validated === true ? 'validated' : 'pending';
+                                    }
+                                    return `<div class="text-xs text-zinc-400 mb-1">
+                                        <span class="${status === 'validated' ? 'text-emerald-400' : status === 'invalidated' ? 'text-red-400' : 'text-amber-400'}">●</span>
+                                        ${assump.description || assump.assumption_text || '无描述'}
+                                    </div>`;
+                                }).join('')}
+                                ${iter.assumptions.length > 2 ? `<p class="text-xs text-zinc-500">...还有 ${iter.assumptions.length - 2} 个假设</p>` : ''}
+                            </div>
+                        ` : ''}
                     </div>
-                    <div>${getStatusBadge(task.status)}</div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
 
             // 模块成熟度
             document.getElementById('module-grid').innerHTML = a.modules.map(m => `
@@ -461,9 +610,15 @@ def get_dashboard_html():
             document.getElementById('assumptions-list').innerHTML = allAssumptions.length
                 ? allAssumptions.map(assump => `
                     <div class="p-3 bg-zinc-900/40 rounded-lg border border-zinc-800/50">
-                        <p class="text-sm font-semibold text-zinc-200 mb-2">${assump.description}</p>
+                        <p class="text-sm font-semibold text-zinc-200 mb-2">${assump.description || assump.assumption_text || '无描述'}</p>
                         <div class="flex items-center justify-between">
-                            ${getStatusBadge(assump.status)}
+                            ${(() => {
+                                let status = assump.status;
+                                if (!status && assump.validated !== undefined) {
+                                    status = assump.validated === true ? 'validated' : 'pending';
+                                }
+                                return getStatusBadge(status);
+                            })()}
                             ${assump.validation_date ? `<span class="text-[10px] text-zinc-500">${assump.validation_date}</span>` : ''}
                         </div>
                     </div>
@@ -514,6 +669,45 @@ def get_dashboard_html():
                 : `<p class="text-zinc-500 text-sm text-center py-4">${t.noTeam}</p>`;
 
             lucide.createIcons();
+            
+            // 根据数据情况隐藏无数据链路的板块（通过 CSS）
+            // 测试覆盖率板块：所有套件的 total_tests 都为 0 时隐藏
+            const hasRealTestData = test.test_suites.some(s => s.total_tests > 0);
+            const coverageSection = document.querySelector('.border-l-amber-500');
+            if(coverageSection) {
+                if(!hasRealTestData) {
+                    coverageSection.classList.add('hidden');
+                } else {
+                    coverageSection.classList.remove('hidden');
+                }
+            }
+            
+            // 团队概览板块：owner 通常为"待分配"时隐藏
+            const hasRealTeamData = a.modules.some(m => m.owner && m.owner !== '待分配');
+            const teamSection = document.getElementById('team-section');
+            if(teamSection) {
+                if(!hasRealTeamData) {
+                    teamSection.classList.add('hidden');
+                } else {
+                    teamSection.classList.remove('hidden');
+                }
+            }
+            
+            // 性能趋势板块：无 performance_history 数据时隐藏
+            const hasRealPerfData = test.performance_history && test.performance_history.length > 0;
+            const perfSection = document.getElementById('performance-section');
+            if(perfSection) {
+                if(!hasRealPerfData) {
+                    perfSection.classList.add('hidden');
+                } else {
+                    perfSection.classList.remove('hidden');
+                }
+            }
+            
+            } catch (e) {
+                console.error("Render UI failed:", e);
+                console.error("Data:", data);
+            }
         }
 
         function analyzeRisks(project, app, test) {
@@ -644,43 +838,136 @@ def get_dashboard_html():
         // 初始化
         setLanguage('zh');
         refreshData();
-        setInterval(refreshData, 30000);
     </script>
 </body>
 </html>
     """
 
-@app.route('/')
-def index():
-    return render_template_string(get_dashboard_html())
 
-@app.route('/api/data')
-def get_data():
-    return jsonify(data_manager.get_all_data())
+def generate_static_html(data_manager, output_file):
+    """生成静态 HTML 文件
+    
+    静态模式：将所有数据内联到 HTML 文件中，避免 CORS 问题
+    优势：
+    - 一个 HTML 文件即可运行，不需要额外的 JSON 文件
+    - 完全避免浏览器的 CORS 限制
+    - 用户体验好，直接打开 HTML 即可查看
+    """
+    # 1. 读取所有数据文件
+    data = {}
+    for key, src_path in data_manager.files.items():
+        src_file = Path(src_path)
+        if src_file.exists():
+            with open(src_file, 'r', encoding='utf-8') as f:
+                data[key] = json.load(f)
+            print(f"[INFO] 已读取数据文件: {src_file.name}")
+        else:
+            print(f"[WARNING] 数据文件不存在: {src_path}")
+            data[key] = {}
+    
+    # 2. 准备内联数据 JavaScript 代码
+    inline_data_js = f"""
+    // 静态模式：数据已内联到 HTML 中
+    const staticData = {{
+        project: {json.dumps(data['project'], ensure_ascii=False)},
+        app: {json.dumps(data['app'], ensure_ascii=False)},
+        test: {json.dumps(data['test'], ensure_ascii=False)},
+        last_updated: new Date().toLocaleTimeString('zh-CN', {{hour: '2-digit', minute: '2-digit', second: '2-digit'}})
+    }};
+    
+    // 刷新数据（静态模式直接使用内联数据，不支持实时刷新）
+    async function refreshData() {{
+        const btnIcon = document.getElementById('refresh-icon');
+        if(btnIcon) btnIcon.classList.add('animate-spin');
+        
+        try {{
+            // 静态模式：使用内联数据
+            window.lastData = staticData;
+            renderUI(staticData);
+        }} catch (e) {{
+            console.error("Render failed", e);
+        }} finally {{
+            if(btnIcon) setTimeout(() => btnIcon.classList.remove('animate-spin'), 600);
+        }}
+    }}
+    
+    // 禁用自动刷新（静态模式无法实时更新数据）
+    // setInterval(refreshData, 30000);
+    """
+    
+    # 3. 生成 HTML 文件
+    html_template = get_dashboard_html()
+    
+    # 4. 插入内联数据到 HTML 中
+    # 在 setLanguage('zh'); 之前插入 staticData 变量定义
+    marker = "setLanguage('zh');"
+    if marker in html_template:
+        html_template = html_template.replace(marker, inline_data_js + "\n        " + marker)
+    
+    # 5. 写入 HTML 文件
+    output_file_path = Path(output_file)
+    output_file_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    with open(output_file_path, 'w', encoding='utf-8') as f:
+        f.write(html_template)
+    
+    print(f"\n[OK] 静态 HTML 已生成: {output_file_path.absolute()}")
+    print(f"[INFO] 可以直接用浏览器打开查看")
+    print(f"[INFO] 数据已内联到 HTML 文件中，无需额外的 JSON 文件")
+    print(f"[INFO] 点击刷新按钮可重新渲染数据")
+    
+    return str(output_file_path.absolute())
+
 
 def main():
     global data_manager
-    parser = argparse.ArgumentParser(description='Modern Observability Dash')
-    parser.add_argument('--project', required=True, help='Project data path')
-    parser.add_argument('--app', required=True, help='App data path')
-    parser.add_argument('--test', required=True, help='Test metrics path')
-    parser.add_argument('--host', default='127.0.0.1')
-    parser.add_argument('--port', type=int, default=5000)
+    
+    parser = argparse.ArgumentParser(
+        description='Modern Observability Dashboard - 静态/Web 两种模式',
+        epilog='示例:\n  静态模式: python run_web_observability.py --mode static --project project.json --app app.json --test test.json --output observability.html\n  Web 模式: python run_web_observability.py --mode web --project project.json --app app.json --test test.json',
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    
+    parser.add_argument('--project', required=True, help='项目数据文件路径')
+    parser.add_argument('--app', required=True, help='应用状态文件路径')
+    parser.add_argument('--test', required=True, help='测试指标文件路径')
+    parser.add_argument('--mode', choices=['static', 'web'], default='static',
+                       help='运行模式: static=生成静态HTML（无需Flask）, web=启动Web服务器（需要Flask）')
+    parser.add_argument('--output', default='observability.html',
+                       help='静态模式下的输出文件路径（默认: observability.html）')
+    parser.add_argument('--host', default='127.0.0.1', help='Web 模式下的服务器地址')
+    parser.add_argument('--port', type=int, default=5000, help='Web 模式下的服务器端口')
+    
     args = parser.parse_args()
 
     # 验证文件
     for f in [args.project, args.app, args.test]:
         if not os.path.exists(f):
-            print(f"Error: {f} not found.")
+            print(f"[ERROR] 文件不存在: {f}")
             exit(1)
 
     data_manager = ObservabilityData(args.project, args.app, args.test)
 
-    print(f"\n🚀 Cox coding-透明流畅的交互体验 已启动!")
-    print(f"🔗 本地地址: http://{args.host}:{args.port}")
-    print(f"📡 监控中: {len(data_manager.files)} 个数据源")
-    
-    app.run(host=args.host, port=args.port, debug=False, threaded=True)
+    if args.mode == 'static':
+        # 静态模式：生成静态 HTML
+        print("\n[INFO] 运行模式: 静态生成")
+        print("[INFO] 正在生成静态 HTML 文件...")
+        generate_static_html(data_manager, args.output)
+        
+    elif args.mode == 'web':
+        # Web 模式：启动 Flask 服务器
+        if not FLASK_AVAILABLE:
+            print("\n[ERROR] Web 模式需要 Flask，但未检测到 Flask 安装")
+            print("[INFO] 请先安装 Flask: pip install flask")
+            print("[INFO] 或者使用静态模式: --mode static")
+            exit(1)
+        
+        print("\n[INFO] 运行模式: Web 交互")
+        print(f"[INFO] 本地地址: http://{args.host}:{args.port}")
+        print(f"[INFO] 监控中: {len(data_manager.files)} 个数据源")
+        print("[INFO] 按 Ctrl+C 停止服务器\n")
+        
+        app.run(host=args.host, port=args.port, debug=False, threaded=True)
 
 if __name__ == '__main__':
     main()

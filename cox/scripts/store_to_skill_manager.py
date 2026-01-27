@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-dev-observability 技能调用 skill-manager 存储信息的辅助脚本
+cox 技能调用 skill-manager 存储信息的辅助脚本
 
 此脚本封装了对 skill-manager 的调用，简化了部署信息和问题追踪信息的存储。
 """
@@ -35,8 +35,8 @@ def store_deployment_info(deploy_mode, config_details):
         storage = SkillStorage(data_path=get_skill_data_path_str())
 
         # 读取现有配置
-        existing_config = storage.get_config("dev-observability") or {}
-        existing_logs = storage.get_logs("dev-observability") or []
+        existing_config = storage.get_config("cox") or {}
+        existing_logs = storage.get_logs("cox") or []
 
         # 更新配置
         existing_config["deploy_mode"] = deploy_mode
@@ -59,7 +59,7 @@ def store_deployment_info(deploy_mode, config_details):
         })
 
         # 保存
-        storage.save("dev-observability", config=existing_config, logs=existing_logs)
+        storage.save("cox", config=existing_config, logs=existing_logs)
 
         return True, "部署信息已存储"
 
@@ -85,8 +85,8 @@ def store_issue_info(issue_id, description, affected_modules, complexity, occurr
         storage = SkillStorage(data_path=get_skill_data_path_str())
 
         # 读取现有配置
-        existing_config = storage.get_config("dev-observability") or {}
-        existing_logs = storage.get_logs("dev-observability") or []
+        existing_config = storage.get_config("cox") or {}
+        existing_logs = storage.get_logs("cox") or []
 
         # 更新配置
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -106,7 +106,7 @@ def store_issue_info(issue_id, description, affected_modules, complexity, occurr
         })
 
         # 保存
-        storage.save("dev-observability", config=existing_config, logs=existing_logs)
+        storage.save("cox", config=existing_config, logs=existing_logs)
 
         return True, f"问题 {issue_id} 信息已存储"
 
@@ -117,7 +117,7 @@ def store_issue_info(issue_id, description, affected_modules, complexity, occurr
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description='dev-observability 存储信息到 skill-manager')
+    parser = argparse.ArgumentParser(description='cox 存储信息到 skill-manager')
     subparsers = parser.add_subparsers(dest='command', help='可用命令')
 
     # 存储部署信息

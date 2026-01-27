@@ -110,9 +110,9 @@ from skill_manager import SkillStorage
 
 storage = SkillStorage(data_path="/workspace/projects/skill-data.json")
 
-# 读取dev-observability现有配置
-existing_config = storage.get_config("dev-observability") or {}
-existing_logs = storage.get_logs("dev-observability") or {}
+# 读取cox现有配置
+existing_config = storage.get_config("cox") or {}
+existing_logs = storage.get_logs("cox") or {}
 
 # 更新配置：添加问题信息
 existing_config["issue_id"] = "ISSUE-<序号>"
@@ -132,7 +132,7 @@ existing_logs.append({
 })
 
 # 保存
-storage.save("dev-observability", config=existing_config, logs=existing_logs)
+storage.save("cox", config=existing_config, logs=existing_logs)
 ```
 
 ---
