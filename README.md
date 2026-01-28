@@ -55,7 +55,7 @@ Traditional Vibe Coding          Deterministic Collaboration
 - AI helps you open the terminal, requests you to test, while observing the execution process simultaneously
 - Displays test results and improvement suggestions in real-time
 - All decisions based on actual execution data, not guesses
-<img width="795" height="588" alt="55ec0557ba3a65b4b09925baa65b5132" src="https://github.com/user-attachments/assets/c7ae88d4-43bb-49e8-9d62-5b0aa4bcec3d" />
+<img width="1017" height="366" alt="1_en" src="https://github.com/user-attachments/assets/6adf5c61-9870-4d72-b167-669004a54171" />
 
 
 #### 2. Data-Driven Rules: Only Rules Based on Real Data Are Effective
@@ -87,7 +87,7 @@ Empty Rules (Ineffective)              Data-Driven Rules (Effective)
 - Automatically collect data for you
 - Establish rules based on real performance metrics, error rates, and user behavior data
 - Optimizations and refactoring based on your project's runtime data are truly effective
-<img width="951" height="657" alt="7bb5c6d2af37cd140f1f92186c492ed3" src="https://github.com/user-attachments/assets/9ebc24c0-4d04-4dc7-b04c-03b42c0582ae" />
+<img width="1344" height="768" alt="2_en" src="https://github.com/user-attachments/assets/4eb0d092-b3ac-48e9-84f0-bc6a29c8fdfe" />
 
 
 #### 3. Systematic Human-Machine Consensus: Visualized Dashboard Replaces Fragmented Operations
@@ -110,13 +110,16 @@ Cannot form global cognition →   Human and machine achieve true consensus
 **How?**
 - Visualized dashboard displays global project status, enabling AI to reach consensus with you
 - Batch generate improvement plans, proactively organize iteration cycles, rather than scattered issue-by-issue approach
-<img width="2144" height="1044" alt="image" src="https://github.com/user-attachments/assets/17b13c32-8c1d-473b-9b4e-e268cccaeb39" />
+![3_en](https://github.com/user-attachments/assets/668aff98-529c-4d8d-b1dc-4ce5c31ff92a)
+
 
 - AI proactively requests your feedback on each feature's completion level (satisfied/needs improvement), automatically identifying and protecting features you're already satisfied with during refactoring
-<img width="1388" height="468" alt="image" src="https://github.com/user-attachments/assets/7f2b0e60-0302-4e12-b8f9-a0d6d627d3a4" />
+<img width="1344" height="768" alt="4_en" src="https://github.com/user-attachments/assets/7d895441-08ed-4e31-825f-df55552f29f1" />
+
 
 - Proactively display systematic hypotheses and potential risks of current approach, avoiding complete overturn due to incorrect prerequisites
-<img width="1866" height="306" alt="image" src="https://github.com/user-attachments/assets/234037aa-2983-4786-ac41-d8bcec38c8f2" />
+<img width="1344" height="768" alt="5_en" src="https://github.com/user-attachments/assets/5c32832f-c8db-4d82-9dbc-e4c3bb466f3a" />
+
 
 - Other points you care about, freely configurable
 ---
@@ -166,7 +169,8 @@ enabling dev-observability          code analysis rules
 **Private Knowledge Accumulation**:
 - As skills self-grow, your project-specific knowledge (architecture decisions, performance baselines, error patterns) is also being deposited
 - This knowledge becomes the basis for future skill decisions, making AI increasingly understand your project
-<img width="1794" height="657" alt="7f8794b6e56894ea9adb6e98ed998dd8" src="https://github.com/user-attachments/assets/cb01b023-b7dd-4e27-85f8-e44ae673a816" />
+<img width="1344" height="768" alt="6_en" src="https://github.com/user-attachments/assets/fd4148ab-956b-45a5-be20-4d84ca953e22" />
+
 
 ---
 
