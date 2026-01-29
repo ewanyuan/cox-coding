@@ -19,7 +19,7 @@ from datetime import datetime
 
 # 尝试导入 Flask，如果失败则提示用户
 try:
-    from flask import Flask, render_template_string, jsonify
+    from flask import Flask, render_template_string, jsonify, request
     FLASK_AVAILABLE = True
 except ImportError:
     FLASK_AVAILABLE = False
@@ -72,13 +72,94 @@ if FLASK_AVAILABLE:
 
     @app.route('/')
     def index():
-        return render_template_string(get_dashboard_html())
+        return render_template_string(get_dashboard_html('web'))
 
     @app.route('/api/data')
     def get_data():
         return jsonify(data_manager.get_all_data())
 
-def get_dashboard_html():
+    @app.route('/api/update/module', methods=['POST'])
+    def update_module_status():
+        """更新模块状态和问题描述（仅交互模式）"""
+        try:
+            data = request.json
+            module_name = data.get('module_name')
+            new_status = data.get('status')
+            issue_description = data.get('issue_description', '')
+            
+            # 读取 app_status.json
+            with open(data_manager.files['app'], 'r', encoding='utf-8') as f:
+                app_data = json.load(f)
+            
+            # 更新模块状态
+            for module in app_data['modules']:
+                if module['module_name'] == module_name:
+                    module['status'] = new_status
+                    if new_status == 'has_issue':
+                        module['issue_description'] = issue_description
+                    else:
+                        module['issue_description'] = ''
+                    break
+            
+            # 更新 last_updated
+            app_data['last_updated'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            
+            # 写回文件
+            with open(data_manager.files['app'], 'w', encoding='utf-8') as f:
+                json.dump(app_data, f, ensure_ascii=False, indent=2)
+            
+            return jsonify({'success': True})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)})
+
+    @app.route('/api/update/assumption', methods=['POST'])
+    def update_assumption_status():
+        """更新假设状态（仅交互模式）"""
+        try:
+            import base64
+            data = request.json
+            assumption_id = data.get('assumption_id')
+            new_status = data.get('status')
+
+            # 读取 project_data.json
+            with open(data_manager.files['project'], 'r', encoding='utf-8') as f:
+                project_data = json.load(f)
+
+            # 更新假设状态
+            for iteration in project_data['iterations']:
+                for assumption in iteration.get('assumptions', []):
+                    # 优先使用 assumption_id 匹配，如果没有则尝试解码 base64 并匹配 hypothesis/description/assumption_text
+                    match_found = False
+
+                    if 'assumption_id' in assumption and assumption['assumption_id'] == assumption_id:
+                        match_found = True
+                    else:
+                        # 尝试解码 base64 并匹配假设内容
+                        try:
+                            decoded_id = base64.b64decode(assumption_id).decode('utf-8')
+                            hypothesis_content = assumption.get('hypothesis') or assumption.get('description') or assumption.get('assumption_text')
+                            if hypothesis_content == decoded_id:
+                                match_found = True
+                        except:
+                            pass
+
+                    if match_found:
+                        assumption['status'] = new_status
+                        if new_status == 'validated':
+                            assumption['validation_date'] = datetime.now().strftime('%Y-%m-%d')
+                        else:
+                            assumption['validation_date'] = None
+                        break
+
+            # 写回文件
+            with open(data_manager.files['project'], 'w', encoding='utf-8') as f:
+                json.dump(project_data, f, ensure_ascii=False, indent=2)
+
+            return jsonify({'success': True})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)})
+
+def get_dashboard_html(mode='static'):
     """现代化 UI 模板 - 采用 Tailwind CSS 和 Lucid Icons (中文默认 & 语言切换)"""
     return """
 <!DOCTYPE html>
@@ -289,7 +370,14 @@ def get_dashboard_html():
                     critical: '紧急',
                     validated: '已验证',
                     invalidated: '已失效',
-                    pending: '待定'
+                    pending: '待定',
+                    confirmed: '待确认',
+                    optimized: '完美',
+                    has_issue: '有问题',
+                    unverifiable: '无法验证',
+                    confirmed_true: '这是真的',
+                    confirmed_false: '这是假的',
+                    uncertain: '我不确定'
                 }
             },
             en: {
@@ -325,7 +413,14 @@ def get_dashboard_html():
                     critical: 'Critical',
                     validated: 'Validated',
                     invalidated: 'Invalid',
-                    pending: 'Pending'
+                    pending: 'Pending',
+                    confirmed: 'Confirmed',
+                    optimized: 'Perfect',
+                    has_issue: 'Has Issue',
+                    unverifiable: 'Unverifiable',
+                    confirmed_true: 'Confirmed True',
+                    confirmed_false: 'Confirmed False',
+                    uncertain: 'Uncertain'
                 }
             }
         };
@@ -376,7 +471,14 @@ def get_dashboard_html():
             'critical': { bg: 'bg-red-500', text: 'text-white' },
             'validated': { bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
             'invalidated': { bg: 'bg-red-500/10', text: 'text-red-400' },
-            'pending': { bg: 'bg-yellow-500/10', text: 'text-yellow-400' }
+            'pending': { bg: 'bg-yellow-500/10', text: 'text-yellow-400' },
+            'confirmed': { bg: 'bg-blue-500/10', text: 'text-blue-400' },
+            'optimized': { bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
+            'has_issue': { bg: 'bg-red-500/10', text: 'text-red-400' },
+            'unverifiable': { bg: 'bg-zinc-700', text: 'text-zinc-400' },
+            'confirmed_true': { bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
+            'confirmed_false': { bg: 'bg-red-500/10', text: 'text-red-400' },
+            'uncertain': { bg: 'bg-yellow-500/10', text: 'text-yellow-400' }
         };
 
         function getStatusBadge(status) {
@@ -399,35 +501,14 @@ def get_dashboard_html():
             if(window.lastData) renderUI(window.lastData);
         }
 
-        async function loadDataFromLocalFiles() {
-            // 从本地 JSON 文件读取数据（静态模式）
-            // 添加时间戳避免浏览器缓存
-            const timestamp = Date.now();
-            const [projectRes, appRes, testRes] = await Promise.all([
-                fetch('project_data.json?t=' + timestamp),
-                fetch('app_status.json?t=' + timestamp),
-                fetch('test_metrics.json?t=' + timestamp)
-            ]);
-            
-            const project = await projectRes.json();
-            const app = await appRes.json();
-            const test = await testRes.json();
-            
-            return {
-                project: project,
-                app: app,
-                test: test,
-                last_updated: new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit', second: '2-digit'})
-            };
-        }
-
         async function refreshData() {
             const btnIcon = document.getElementById('refresh-icon');
             if(btnIcon) btnIcon.classList.add('animate-spin');
             
             try {
-                // 静态模式：从本地 JSON 文件读取数据
-                const data = await loadDataFromLocalFiles();
+                // Web 交互模式：从 Flask API 读取数据
+                const response = await fetch('/api/data');
+                const data = await response.json();
                 window.lastData = data;
                 renderUI(data);
             } catch (e) {
@@ -553,7 +634,7 @@ def get_dashboard_html():
                                     }
                                     return `<div class="text-xs text-zinc-400 mb-1">
                                         <span class="${status === 'validated' ? 'text-emerald-400' : status === 'invalidated' ? 'text-red-400' : 'text-amber-400'}">●</span>
-                                        ${assump.description || assump.assumption_text || '无描述'}
+                                        ${assump.hypothesis || assump.description || assump.assumption_text || '无描述'}
                                     </div>`;
                                 }).join('')}
                                 ${iter.assumptions.length > 2 ? `<p class="text-xs text-zinc-500">...还有 ${iter.assumptions.length - 2} 个假设</p>` : ''}
@@ -563,17 +644,35 @@ def get_dashboard_html():
                 `;
             }).join('');
 
-            // 模块成熟度
-            document.getElementById('module-grid').innerHTML = a.modules.map(m => `
-                <div class="p-4 bg-zinc-900/40 rounded-xl border border-zinc-800/50">
+            // 模块成熟度（交互模式：只显示已宣称开发好的模块，支持状态更新）
+            const developedModules = a.modules.filter(m => 
+                m.status === 'confirmed' || 
+                m.status === 'optimized' || 
+                m.status === 'has_issue'
+            );
+            
+            document.getElementById('module-grid').innerHTML = developedModules.map(m => `
+                <div class="p-4 bg-zinc-900/40 rounded-xl border border-zinc-800/50" data-module="${m.module_name}">
                     <div class="flex justify-between items-start mb-3">
                         <p class="font-bold text-sm text-zinc-200">${m.module_name}</p>
-                        ${getStatusBadge(m.status)}
+                        ${renderModuleStatusSelect(m)}
                     </div>
                     <div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
                         <div class="bg-blue-500 h-full" style="width: ${(m.completion_rate || 0)*100}%"></div>
                     </div>
                     <p class="text-[10px] text-zinc-500 mt-2 font-mono uppercase">${((m.completion_rate || 0)*100).toFixed(0)}% ${t.completeSuffix}</p>
+                    ${m.status === 'has_issue' && m.issue_description ? `
+                        <div class="mt-3 p-2 bg-red-500/10 rounded-lg border border-red-500/20">
+                            <p class="text-xs text-red-400">问题描述：${m.issue_description}</p>
+                        </div>
+                    ` : ''}
+                    ${window.showIssueInput === m.module_name ? `
+                        <div class="mt-3">
+                            <textarea id="issue-input-${m.module_name}" class="w-full p-2 bg-zinc-800 border border-zinc-700 rounded-lg text-xs text-zinc-200" rows="2" placeholder="请描述问题..."></textarea>
+                            <button onclick="submitModuleIssue('${m.module_name}')" class="mt-2 px-3 py-1 bg-red-500 text-white text-xs rounded-lg hover:bg-red-600">提交问题</button>
+                            <button onclick="cancelModuleIssue('${m.module_name}')" class="mt-2 ml-2 px-3 py-1 bg-zinc-700 text-zinc-300 text-xs rounded-lg hover:bg-zinc-600">取消</button>
+                        </div>
+                    ` : ''}
                 </div>
             `).join('');
 
@@ -605,20 +704,14 @@ def get_dashboard_html():
                 `).join('')
                 : `<p class="text-zinc-500 text-sm text-center py-4">${t.healthy}</p>`;
 
-            // 假设分析
+            // 假设分析（交互模式：支持状态更新）
             const allAssumptions = p.iterations.flatMap(i => i.assumptions || []);
             document.getElementById('assumptions-list').innerHTML = allAssumptions.length
                 ? allAssumptions.map(assump => `
                     <div class="p-3 bg-zinc-900/40 rounded-lg border border-zinc-800/50">
-                        <p class="text-sm font-semibold text-zinc-200 mb-2">${assump.description || assump.assumption_text || '无描述'}</p>
+                        <p class="text-sm font-semibold text-zinc-200 mb-2">${assump.hypothesis || assump.description || assump.assumption_text || '无描述'}</p>
                         <div class="flex items-center justify-between">
-                            ${(() => {
-                                let status = assump.status;
-                                if (!status && assump.validated !== undefined) {
-                                    status = assump.validated === true ? 'validated' : 'pending';
-                                }
-                                return getStatusBadge(status);
-                            })()}
+                            ${renderAssumptionStatusSelect(assump)}
                             ${assump.validation_date ? `<span class="text-[10px] text-zinc-500">${assump.validation_date}</span>` : ''}
                         </div>
                     </div>
@@ -835,8 +928,465 @@ def get_dashboard_html():
             `;
         }
 
+        // 模块状态选择器（Web 交互模式）
+        function renderModuleStatusSelect(module) {
+            const isZh = currentLang === 'zh';
+            const statusOptions = [
+                { value: 'confirmed', label: isZh ? '待确认' : 'Confirmed' },
+                { value: 'optimized', label: isZh ? '完美' : 'Perfect' },
+                { value: 'has_issue', label: isZh ? '有问题' : 'Has Issue' }
+            ];
+            
+            return `
+                <select onchange="updateModuleStatus('${module.module_name}', this.value)" 
+                        class="text-xs px-2 py-1 bg-zinc-800 border border-zinc-700 rounded text-zinc-300 focus:border-blue-500 focus:outline-none">
+                    ${statusOptions.map(opt => 
+                        `<option value="${opt.value}" ${module.status === opt.value ? 'selected' : ''}>${opt.label}</option>`
+                    ).join('')}
+                </select>
+                ${module.status === 'has_issue' ? `
+                    <button onclick="showModuleIssueInput('${module.module_name}')" 
+                            class="ml-2 text-xs text-red-400 hover:text-red-300">
+                        <i data-lucide="edit" class="w-3 h-3 inline"></i>
+                    </button>
+                ` : ''}
+            `;
+        }
+
+        // 假设状态选择器（Web 交互模式）
+        function renderAssumptionStatusSelect(assumption) {
+            const isZh = currentLang === 'zh';
+            const statusOptions = [
+                { value: 'pending', label: isZh ? '待验证' : 'Pending' },
+                { value: 'validated', label: isZh ? '已验证' : 'Validated' },
+                { value: 'unverifiable', label: isZh ? '无法验证' : 'Unverifiable' },
+                { value: 'confirmed_true', label: isZh ? '这是真的' : 'Confirmed True' },
+                { value: 'confirmed_false', label: isZh ? '这是假的' : 'Confirmed False' },
+                { value: 'uncertain', label: isZh ? '我不确定' : 'Uncertain' }
+            ];
+
+            // 使用 assumption_id，如果没有则使用 hypothesis 的 base64 编码作为临时 ID
+            const assumptionId = assumption.assumption_id || btoa(assumption.hypothesis || assumption.description || assumption.assumption_text || '');
+
+            return `
+                <select onchange="updateAssumptionStatus('${assumptionId}', this.value)"
+                        class="text-xs px-2 py-1 bg-zinc-800 border border-zinc-700 rounded text-zinc-300 focus:border-blue-500 focus:outline-none">
+                    ${statusOptions.map(opt =>
+                        `<option value="${opt.value}" ${assumption.status === opt.value ? 'selected' : ''}>${opt.label}</option>`
+                    ).join('')}
+                </select>
+            `;
+        }
+
+        // 全局变量：控制问题输入框的显示
+        window.showIssueInput = null;
+
+        // 显示模块问题描述输入框
+        function showModuleIssueInput(moduleName) {
+            window.showIssueInput = moduleName;
+            refreshData();
+        }
+
+        // 取消问题描述输入
+        function cancelModuleIssue(moduleName) {
+            window.showIssueInput = null;
+            refreshData();
+        }
+
+        // 提交模块问题
+        function submitModuleIssue(moduleName) {
+            const input = document.getElementById(`issue-input-${moduleName}`);
+            const issueDescription = input ? input.value : '';
+            
+            fetch('/api/update/module', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    module_name: moduleName,
+                    status: 'has_issue',
+                    issue_description: issueDescription
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    window.showIssueInput = null;
+                    refreshData();
+                } else {
+                    alert('更新失败: ' + (data.error || '未知错误'));
+                }
+            })
+            .catch(err => {
+                console.error('Error updating module:', err);
+                alert('更新失败，请检查网络连接');
+            });
+        }
+
+        // 更新模块状态
+        function updateModuleStatus(moduleName, newStatus) {
+            const issueDescription = newStatus === 'has_issue' ? '' : '';
+            
+            fetch('/api/update/module', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    module_name: moduleName,
+                    status: newStatus,
+                    issue_description: issueDescription
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    refreshData();
+                } else {
+                    alert('更新失败: ' + (data.error || '未知错误'));
+                }
+            })
+            .catch(err => {
+                console.error('Error updating module:', err);
+                alert('更新失败，请检查网络连接');
+            });
+        }
+
+        // 更新假设状态
+        function updateAssumptionStatus(assumptionId, newStatus) {
+            fetch('/api/update/assumption', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    assumption_id: assumptionId,
+                    status: newStatus
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    refreshData();
+                } else {
+                    alert('更新失败: ' + (data.error || '未知错误'));
+                }
+            })
+            .catch(err => {
+                console.error('Error updating assumption:', err);
+                alert('更新失败，请检查网络连接');
+            });
+        }
+
         // 初始化
         setLanguage('zh');
+        refreshData();
+    </script>
+</body>
+</html>
+    """
+
+
+def get_static_html_template():
+    """获取静态 HTML 模板（简化版，移除交互功能）"""
+    return """
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cox 可观测性面板 - 静态模式</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #09090b 0%, #18181b 50%, #09090b 100%);
+            min-height: 100vh;
+        }
+        .glass-card {
+            background: rgba(39, 39, 42, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(63, 63, 70, 0.3);
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="text-zinc-100 antialiased p-4 lg:p-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="mb-8 flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent" id="app-title">Cox 可观测性面板</h1>
+                <p class="text-sm text-zinc-500 mt-1" id="project-info">正在加载...</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="px-4 py-2 bg-zinc-900/80 rounded-lg border border-zinc-800">
+                    <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">最后更新</p>
+                    <p class="text-sm font-mono text-emerald-400" id="last-updated">--:--:--</p>
+                </div>
+                <button onclick="refreshData()" class="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg font-semibold hover:bg-zinc-200 transition-colors">
+                    <i data-lucide="refresh-cw" class="w-4 h-4" id="refresh-icon"></i>
+                    <span>刷新</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Top Metrics -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10" id="top-metrics"></div>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Left Column -->
+            <div class="lg:col-span-8 space-y-6">
+                <div class="glass-card rounded-2xl p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-lg font-bold flex items-center gap-2">
+                            <i data-lucide="git-merge" class="text-blue-400"></i> 迭代管理
+                        </h2>
+                        <span class="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded" id="task-count">0 迭代</span>
+                    </div>
+                    <div class="space-y-3" id="task-list"></div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-6">
+                    <h2 class="text-lg font-bold flex items-center gap-2 mb-6">
+                        <i data-lucide="layers" class="text-emerald-400"></i> 模块成熟度
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="module-grid"></div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="lg:col-span-4 space-y-6">
+                <div class="glass-card rounded-2xl p-6">
+                    <h2 class="text-lg font-bold flex items-center gap-2 mb-6">
+                        <i data-lucide="lightbulb" class="text-yellow-400"></i> 假设验证
+                    </h2>
+                    <div class="space-y-3" id="assumptions-list"></div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-6 bg-red-500/5 border-red-500/20">
+                    <h2 class="text-lg font-bold flex items-center gap-2 mb-4 text-red-400">
+                        <i data-lucide="alert-triangle"></i> 活跃异常
+                    </h2>
+                    <div class="space-y-3" id="anomaly-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const statusConfig = {
+            'completed': { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: '已完成' },
+            'done': { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: '已完成' },
+            'in_progress': { bg: 'bg-blue-500/10', text: 'text-blue-400', label: '进行中' },
+            'todo': { bg: 'bg-zinc-800', text: 'text-zinc-400', label: '待处理' },
+            'not_started': { bg: 'bg-zinc-800', text: 'text-zinc-400', label: '未开始' },
+            'delayed': { bg: 'bg-red-500/10', text: 'text-red-400', label: '延期' },
+            'critical': { bg: 'bg-red-500', text: 'text-white', label: '紧急' },
+            'validated': { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: '已验证' },
+            'invalidated': { bg: 'bg-red-500/10', text: 'text-red-400', label: '已失效' },
+            'pending': { bg: 'bg-yellow-500/10', text: 'text-yellow-400', label: '待定' },
+            'confirmed': { bg: 'bg-blue-500/10', text: 'text-blue-400', label: '待确认' },
+            'optimized': { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: '完美' },
+            'has_issue': { bg: 'bg-red-500/10', text: 'text-red-400', label: '有问题' }
+        };
+
+        function getStatusBadge(status) {
+            const key = status ? status.toLowerCase() : 'pending';
+            const cfg = statusConfig[key] || { bg: 'bg-zinc-800', text: 'text-zinc-400', label: status || '未知' };
+            return `<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${cfg.bg} ${cfg.text}">${cfg.label}</span>`;
+        }
+
+        let collapsedIterations = new Set();
+
+        function toggleIteration(iterationId) {
+            if (collapsedIterations.has(iterationId)) {
+                collapsedIterations.delete(iterationId);
+            } else {
+                collapsedIterations.add(iterationId);
+            }
+            if(window.lastData) renderUI(window.lastData);
+        }
+
+        async function refreshData() {
+            const btnIcon = document.getElementById('refresh-icon');
+            if(btnIcon) btnIcon.classList.add('animate-spin');
+            try {
+                if(window.lastData) renderUI(window.lastData);
+            } catch (e) {
+                console.error("Refresh failed", e);
+            } finally {
+                if(btnIcon) setTimeout(() => btnIcon.classList.remove('animate-spin'), 600);
+            }
+        }
+
+        function renderUI(data) {
+            try {
+                const t = translations;
+                document.getElementById('last-updated').textContent = data.last_updated;
+                const p = data.project;
+                const a = data.app;
+                const test = data.test;
+
+                document.getElementById('project-info').textContent = `${p.project_name} • v${a.version || '1.0'}`;
+
+                const totalTasks = p.iterations.reduce((sum, iter) => sum + iter.tasks.length, 0);
+                document.getElementById('top-metrics').innerHTML = `
+                    ${renderMetricCard('迭代周期', p.iterations.length, 'milestone', 'text-blue-400')}
+                    ${renderMetricCard('任务总数', totalTasks, 'check-circle', 'text-emerald-400')}
+                    ${renderMetricCard('系统异常', test.anomalies.length, 'zap', 'text-red-400')}
+                `;
+
+                document.getElementById('task-count').textContent = `${p.iterations.length} 迭代`;
+                document.getElementById('task-list').innerHTML = p.iterations.map(iter => {
+                    const completedTasks = iter.tasks.filter(t => t.status === 'completed' || t.status === 'done').length;
+                    const progress = iter.tasks.length > 0 ? (completedTasks / iter.tasks.length * 100).toFixed(0) : 0;
+                    const isCurrent = iter.iteration_id === p.current_iteration;
+                    const isCollapsed = !isCurrent && collapsedIterations.has(iter.iteration_id);
+                    
+                    return `
+                        <div class="bg-zinc-900/40 rounded-xl border ${isCurrent ? 'border-blue-500/30 bg-blue-500/5' : 'border-zinc-800/50'} overflow-hidden">
+                            <div class="p-4 border-b border-zinc-800/50 cursor-pointer hover:bg-zinc-800/30 transition-colors" onclick="toggleIteration('${iter.iteration_id}')">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-3">
+                                        ${isCurrent ? '<span class="text-xs bg-blue-500 text-white px-2 py-0.5 rounded font-medium">当前</span>' : ''}
+                                        <i data-lucide="${isCollapsed ? 'chevron-right' : 'chevron-down'}" class="w-4 h-4 text-zinc-500 transition-transform"></i>
+                                        <h3 class="font-bold text-base text-zinc-200">${iter.iteration_name}</h3>
+                                    </div>
+                                    ${getStatusBadge(iter.status)}
+                                </div>
+                                <div class="flex items-center gap-4 text-xs text-zinc-500">
+                                    <span><i data-lucide="calendar" class="w-3 h-3 inline mr-1"></i>${iter.start_date || '-'} ~ ${iter.end_date || '-'}</span>
+                                </div>
+                            </div>
+                            <div class="${isCollapsed ? 'hidden' : ''}">
+                                <div class="px-4 py-3 bg-zinc-900/20">
+                                    <div class="flex items-center justify-between text-xs mb-1">
+                                        <span class="text-zinc-400">任务进度</span>
+                                        <span class="text-zinc-300">${completedTasks}/${iter.tasks.length} 已完成 (${progress}%)</span>
+                                    </div>
+                                    <div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                                        <div class="bg-gradient-to-r from-blue-500 to-emerald-500 h-full transition-all duration-500" style="width: ${progress}%"></div>
+                                    </div>
+                                </div>
+                                <div class="p-4 space-y-2">
+                                    ${iter.tasks.length > 0 ? iter.tasks.map(task => `
+                                        <div class="flex items-center justify-between p-3 bg-zinc-900/40 rounded-lg border border-zinc-800/30">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-1.5 h-6 rounded-full ${task.status === 'completed' || task.status === 'done' ? 'bg-emerald-500' : task.status === 'in_progress' ? 'bg-blue-500' : 'bg-zinc-600'}"></div>
+                                                <div>
+                                                    <p class="font-medium text-sm text-zinc-200">${task.task_name}</p>
+                                                    <div class="flex items-center gap-3 mt-1 text-xs text-zinc-500">
+                                                        <span>${task.task_id}</span>
+                                                        ${task.assignee ? `<span><i data-lucide="user" class="w-3 h-3 inline mr-1"></i>${task.assignee}</span>` : ''}
+                                                        ${task.priority ? `<span class="px-1.5 py-0.5 rounded ${task.priority === 'high' || task.priority === 'critical' ? 'bg-red-500/10 text-red-400' : 'bg-zinc-700/50 text-zinc-400'}">${task.priority}</span>` : ''}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            ${getStatusBadge(task.status)}
+                                        </div>
+                                    `).join('') : '<p class="text-sm text-zinc-500 text-center py-4">尚未详细计划</p>'}
+                                </div>
+                            </div>
+                            ${iter.assumptions && iter.assumptions.length > 0 ? `
+                                <div class="px-4 py-3 border-t border-zinc-800/50">
+                                    <div class="flex items-center gap-2 text-xs text-zinc-500 mb-2">
+                                        <i data-lucide="lightbulb" class="w-3 h-3"></i>
+                                        <span>开发假设 (${iter.assumptions.length})</span>
+                                    </div>
+                                    ${iter.assumptions.slice(0, 2).map(assump => {
+                                        let status = assump.status;
+                                        if (!status && assump.validated !== undefined) {
+                                            status = assump.validated === true ? 'validated' : 'pending';
+                                        }
+                                        return `<div class="text-xs text-zinc-400 mb-1">
+                                            <span class="${status === 'validated' ? 'text-emerald-400' : status === 'invalidated' ? 'text-red-400' : 'text-amber-400'}">●</span>
+                                            ${assump.hypothesis || assump.description || assump.assumption_text || '无描述'}
+                                        </div>`;
+                                    }).join('')}
+                                    ${iter.assumptions.length > 2 ? `<p class="text-xs text-zinc-500">...还有 ${iter.assumptions.length - 2} 个假设</p>` : ''}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+
+                const developedModules = a.modules.filter(m => 
+                    m.status === 'confirmed' || 
+                    m.status === 'optimized' || 
+                    m.status === 'has_issue'
+                );
+                document.getElementById('module-grid').innerHTML = developedModules.map(m => `
+                    <div class="p-4 bg-zinc-900/40 rounded-xl border border-zinc-800/50">
+                        <div class="flex justify-between items-start mb-3">
+                            <p class="font-bold text-sm text-zinc-200">${m.module_name}</p>
+                            ${getStatusBadge(m.status)}
+                        </div>
+                        <div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                            <div class="bg-blue-500 h-full" style="width: ${(m.completion_rate || 0)*100}%"></div>
+                        </div>
+                        <p class="text-[10px] text-zinc-500 mt-2 font-mono uppercase">${((m.completion_rate || 0)*100).toFixed(0)}% 完成</p>
+                        ${m.status === 'has_issue' && m.issue_description ? `
+                            <div class="mt-3 p-2 bg-red-500/10 rounded-lg border border-red-500/20">
+                                <p class="text-xs text-red-400">问题描述：${m.issue_description}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('') || '<p class="text-sm text-zinc-500 text-center py-4">暂无已开发的模块</p>';
+
+                const allAssumptions = p.iterations.flatMap(i => i.assumptions || []);
+                document.getElementById('assumptions-list').innerHTML = allAssumptions.length
+                    ? allAssumptions.map(assump => `
+                        <div class="p-3 bg-zinc-900/40 rounded-lg border border-zinc-800/50">
+                            <p class="text-sm font-semibold text-zinc-200 mb-2">${assump.hypothesis || assump.description || assump.assumption_text || '无描述'}</p>
+                            <div class="flex items-center justify-between">
+                                ${getStatusBadge(assump.status)}
+                                ${assump.validation_date ? `<span class="text-[10px] text-zinc-500">${assump.validation_date}</span>` : ''}
+                            </div>
+                        </div>
+                    `).join('')
+                    : '<p class="text-zinc-500 text-sm text-center py-4">暂无跟踪的假设</p>';
+
+                document.getElementById('anomaly-list').innerHTML = test.anomalies.length
+                    ? test.anomalies.map(anom => `
+                        <div class="p-3 bg-red-500/10 rounded-lg border border-red-500/20 text-xs">
+                            <p class="font-bold text-red-400 mb-1">${anom.type}</p>
+                            <p class="text-zinc-400 line-clamp-1">${anom.description}</p>
+                        </div>
+                    `).join('')
+                    : '<p class="text-zinc-500 text-sm text-center py-4">系统状态良好</p>';
+
+                lucide.createIcons();
+            } catch (e) {
+                console.error("Render failed:", e);
+                console.error("Data:", data);
+            }
+        }
+
+        function renderMetricCard(label, value, icon, iconColor) {
+            return `
+                <div class="glass-card rounded-2xl p-5 flex items-center gap-5">
+                    <div class="p-3 bg-zinc-900 rounded-xl">
+                        <i data-lucide="${icon}" class="w-6 h-6 ${iconColor}"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">${label}</p>
+                        <p class="text-2xl font-bold text-white">${value}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        const translations = {
+            appTitle: 'Cox 可观测性面板',
+            lastUpdate: '最后更新',
+            refresh: '刷新'
+        };
+
+        // 静态模式固定中文，不需要 setLanguage 函数
         refreshData();
     </script>
 </body>
@@ -852,6 +1402,7 @@ def generate_static_html(data_manager, output_file):
     - 一个 HTML 文件即可运行，不需要额外的 JSON 文件
     - 完全避免浏览器的 CORS 限制
     - 用户体验好，直接打开 HTML 即可查看
+    - 静态模式只提供纯展示功能，不包含交互元素
     """
     # 1. 读取所有数据文件
     data = {}
@@ -895,12 +1446,12 @@ def generate_static_html(data_manager, output_file):
     // setInterval(refreshData, 30000);
     """
     
-    # 3. 生成 HTML 文件
-    html_template = get_dashboard_html()
+    # 3. 获取静态 HTML 模板（简化版，不含交互功能）
+    html_template = get_static_html_template()
     
     # 4. 插入内联数据到 HTML 中
-    # 在 setLanguage('zh'); 之前插入 staticData 变量定义
-    marker = "setLanguage('zh');"
+    # 在 refreshData(); 之前插入 staticData 变量定义
+    marker = "refreshData();"
     if marker in html_template:
         html_template = html_template.replace(marker, inline_data_js + "\n        " + marker)
     
@@ -914,7 +1465,7 @@ def generate_static_html(data_manager, output_file):
     print(f"\n[OK] 静态 HTML 已生成: {output_file_path.absolute()}")
     print(f"[INFO] 可以直接用浏览器打开查看")
     print(f"[INFO] 数据已内联到 HTML 文件中，无需额外的 JSON 文件")
-    print(f"[INFO] 点击刷新按钮可重新渲染数据")
+    print(f"[INFO] 静态模式只提供展示功能，不包含交互元素")
     
     return str(output_file_path.absolute())
 
