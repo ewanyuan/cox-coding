@@ -354,6 +354,14 @@ def main():
     export_parser.add_argument('--test', required=True, help='测试指标文件')
     export_parser.add_argument('--output', default='metrics.prom', help='输出文件')
 
+    # 更新模块状态命令（供Agent调用）
+    update_module_parser = subparsers.add_parser('update-module', help='更新模块状态（供Agent调用）')
+    update_module_parser.add_argument('--app', required=True, help='应用状态文件')
+    update_module_parser.add_argument('--module', required=True, help='模块名称')
+    update_module_parser.add_argument('--status', required=True, choices=['pending', 'developed', 'confirmed', 'optimized'], help='模块状态')
+    update_module_parser.add_argument('--rate', type=float, default=1.0, help='完成率 (0.0-1.0)')
+    update_module_parser.add_argument('--notes', default='', help='备注说明')
+
     args = parser.parse_args()
 
     if args.command == 'validate':
@@ -465,6 +473,35 @@ def main():
                     suite_name=suite_name, coverage=suite["coverage"]))
 
         print("[OK] 导出完成")
+
+    elif args.command == 'update-module':
+        # 加载应用状态文件
+        app_data = load_json_file(args.app)
+
+        # 查找并更新模块
+        module_found = False
+        for module in app_data.get('modules', []):
+            if module['module_name'] == args.module:
+                module['status'] = args.status
+                module['completion_rate'] = args.rate
+                module['last_update'] = datetime.now().strftime('%Y-%m-%d')
+                if args.notes:
+                    module['notes'] = args.notes
+                module_found = True
+                break
+
+        if not module_found:
+            print(f"错误: 未找到模块 '{args.module}'")
+            sys.exit(1)
+
+        # 更新全局 last_updated
+        app_data['last_updated'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        # 写回文件
+        with open(args.app, 'w', encoding='utf-8') as f:
+            json.dump(app_data, f, ensure_ascii=False, indent=2)
+
+        print(f"[OK] 模块 '{args.module}' 状态已更新为 {args.status} (完成率: {args.rate*100}%)")
 
     else:
         parser.print_help()

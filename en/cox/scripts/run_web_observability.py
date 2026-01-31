@@ -302,16 +302,6 @@ def get_dashboard_html(mode='static'):
                 </div>
             </div>
 
-            <div class="glass-card rounded-2xl p-6 bg-orange-500/5 border-orange-500/20">
-                <h2 class="text-lg font-bold flex items-center gap-2 mb-6 text-orange-400">
-                    <i data-lucide="alert-octagon"></i> 
-                    <span id="title-risks">风险告警</span>
-                </h2>
-                <div class="space-y-3" id="risk-list">
-                    <!-- 动态内容 -->
-                </div>
-            </div>
-
             <div class="glass-card rounded-2xl p-6 lg:col-span-1" id="performance-section">
                 <h2 class="text-lg font-bold flex items-center gap-2 mb-6">
                     <i data-lucide="trending-up" class="text-green-400"></i> 
@@ -346,7 +336,6 @@ def get_dashboard_html(mode='static'):
                 coverage: '测试覆盖率',
                 anomalies: '活跃异常',
                 assumptions: '假设验证分析',
-                risks: '风险告警',
                 perf: '性能趋势',
                 team: '团队概览',
                 metricIterations: '迭代周期',
@@ -357,7 +346,6 @@ def get_dashboard_html(mode='static'):
                 completeSuffix: '完成',
                 healthy: '系统状态良好',
                 noAssumptions: '暂无跟踪的假设',
-                noRisks: '当前无活跃风险',
                 noTeam: '暂无团队数据',
                 noPerf: '无可用性能数据',
                 status: {
@@ -389,7 +377,6 @@ def get_dashboard_html(mode='static'):
                 coverage: 'Test Coverage',
                 anomalies: 'Active Anomalies',
                 assumptions: 'Assumptions Analysis',
-                risks: 'Risk Alerts',
                 perf: 'Performance Trends',
                 team: 'Team Overview',
                 metricIterations: 'Iterations',
@@ -400,7 +387,6 @@ def get_dashboard_html(mode='static'):
                 completeSuffix: 'Complete',
                 healthy: 'System Healthy',
                 noAssumptions: 'No assumptions tracked',
-                noRisks: 'No active risks',
                 noTeam: 'No team data available',
                 noPerf: 'No performance data available',
                 status: {
@@ -425,7 +411,7 @@ def get_dashboard_html(mode='static'):
             }
         };
 
-        let currentLang = 'en';
+        let currentLang = 'zh';
 
         function setLanguage(lang) {
             currentLang = lang;
@@ -453,7 +439,6 @@ def get_dashboard_html(mode='static'):
             document.getElementById('title-coverage').textContent = t.coverage;
             document.getElementById('title-anomalies').textContent = t.anomalies;
             document.getElementById('title-assumptions').textContent = t.assumptions;
-            document.getElementById('title-risks').textContent = t.risks;
             document.getElementById('title-perf').textContent = t.perf;
             document.getElementById('title-team').textContent = t.team;
 
@@ -592,6 +577,7 @@ def get_dashboard_html(mode='static'):
                                                     <span>${task.task_id}</span>
                                                     ${task.assignee ? `<span><i data-lucide="user" class="w-3 h-3 inline mr-1"></i>${task.assignee}</span>` : ''}
                                                     ${task.priority ? `<span class="px-1.5 py-0.5 rounded ${task.priority === 'high' || task.priority === 'critical' ? 'bg-red-500/10 text-red-400' : 'bg-zinc-700/50 text-zinc-400'}">${task.priority}</span>` : ''}
+                                                    ${task.risk_level ? `<span class="px-1.5 py-0.5 rounded ${task.risk_level === 'high' ? 'bg-orange-500/10 text-orange-400' : 'bg-emerald-500/10 text-emerald-400'}">${task.risk_level}</span>` : ''}
                                                 </div>
                                             </div>
                                         </div>
@@ -718,20 +704,6 @@ def get_dashboard_html(mode='static'):
                 `).join('')
                 : `<p class="text-zinc-500 text-sm text-center py-4">${t.noAssumptions}</p>`;
 
-            // 风险告警 (逻辑保持英文KEY但UI翻译)
-            const risks = analyzeRisks(p, a, test);
-            document.getElementById('risk-list').innerHTML = risks.length
-                ? risks.map(risk => `
-                    <div class="p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="font-bold text-orange-400 text-sm">${risk.level}</span>
-                            <span class="text-[10px] text-zinc-500 uppercase">${risk.category}</span>
-                        </div>
-                        <p class="text-xs text-zinc-300">${risk.message}</p>
-                    </div>
-                `).join('')
-                : `<p class="text-zinc-500 text-sm text-center py-4">${t.noRisks}</p>`;
-
             // 性能趋势
             if (test.performance_history && test.performance_history.length > 0) {
                 renderPerformanceChart(test.performance_history);
@@ -801,39 +773,6 @@ def get_dashboard_html(mode='static'):
                 console.error("Render UI failed:", e);
                 console.error("Data:", data);
             }
-        }
-
-        function analyzeRisks(project, app, test) {
-            const risks = [];
-            const currentIter = project.iterations.find(i => i.iteration_id === project.current_iteration);
-            const isZh = currentLang === 'zh';
-
-            project.iterations.forEach(iter => {
-                if (iter.status === 'delayed') {
-                    risks.push({
-                        level: 'HIGH', category: isZh ? '排期' : 'Schedule',
-                        message: isZh ? `迭代 ${iter.iteration_name} 已延期` : `Iteration ${iter.iteration_name} delayed`
-                    });
-                }
-            });
-
-            const blockedTasks = currentIter?.tasks.filter(t => t.status === 'blocked') || [];
-            if (blockedTasks.length > 0) {
-                risks.push({
-                    level: 'MEDIUM', category: isZh ? '阻塞' : 'Blockers',
-                    message: isZh ? `${blockedTasks.length} 个任务被阻塞` : `${blockedTasks.length} tasks blocked`
-                });
-            }
-
-            const criticalAnomalies = test.anomalies.filter(a => a.severity === 'critical');
-            if (criticalAnomalies.length > 0) {
-                risks.push({
-                    level: 'CRITICAL', category: isZh ? '质量' : 'Quality',
-                    message: isZh ? `检测到 ${criticalAnomalies.length} 个严重异常` : `${criticalAnomalies.length} critical anomalies detected`
-                });
-            }
-
-            return risks.slice(0, 5);
         }
 
         function analyzeTeamData(project, app) {
@@ -1074,7 +1013,7 @@ def get_dashboard_html(mode='static'):
         }
 
         // 初始化
-        setLanguage('en');
+        setLanguage('zh');
         refreshData();
     </script>
 </body>
@@ -1283,6 +1222,7 @@ def get_static_html_template():
                                                         <span>${task.task_id}</span>
                                                         ${task.assignee ? `<span><i data-lucide="user" class="w-3 h-3 inline mr-1"></i>${task.assignee}</span>` : ''}
                                                         ${task.priority ? `<span class="px-1.5 py-0.5 rounded ${task.priority === 'high' || task.priority === 'critical' ? 'bg-red-500/10 text-red-400' : 'bg-zinc-700/50 text-zinc-400'}">${task.priority}</span>` : ''}
+                                                        ${task.risk_level ? `<span class="px-1.5 py-0.5 rounded ${task.risk_level === 'high' ? 'bg-orange-500/10 text-orange-400' : 'bg-emerald-500/10 text-emerald-400'}">${task.risk_level}</span>` : ''}
                                                     </div>
                                                 </div>
                                             </div>

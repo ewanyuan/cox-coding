@@ -39,20 +39,20 @@ User: Build a calculator using Cox skill
 Cox: Understood, I'll help plan the calculator project development. Let me first create project observability data...
 [Invoke scripts to generate data, plan iterations and tasks]
 Cox: Project planning complete, includes the following modules:
-- UI Interface Module
-- Calculation Logic Module
-- History Module
+- Number Input & Display
+- Basic Calculations
+- Clear & Backspace
 
 Now I'll break down iteration tasks, then request development skills to implement specific features.
 ```
 
-### Project Progress and Risks
-- "Want to know project progress", "any delay risks", "iteration completion percentage"
+### Project Progress
+- "Want to know project progress", "iteration completion percentage"
 - "View task status", "which tasks completed", "what's still pending"
 
 ### Issue Tracking
 - "How to track frequent bugs", "handle recurring issues", "need to record unresolved problems"
-- "What risks exist", "any anomalies needing attention"
+- "Any anomalies needing attention"
 
 ### Quality Assurance
 - "Need to monitor API performance", "discover system anomalies", "test coverage status"
@@ -148,6 +148,12 @@ The script generates three JSON files in the current directory:
 - Module list in JSON format, contains id and name fields
 - When Agent invokes script, should automatically infer appropriate modules based on project requirements
 
+**⚠️ CRITICAL: Module Definition Rules**
+- **Modules MUST be user-verifiable features**, not technical components
+- **Forbidden module names**: "UI Module", "Backend Module", "Database Module", "Logic Module", "Interface Module" etc.
+- **Correct module examples**: "User Login", "Article List", "Add to Cart", "Search", "Payment"
+- **Think from user perspective**: "What can I see and test?" not "How is it implemented?"
+
 **Subsequent Use**:
 - Directly modify generated JSON files to fit actual project
 - See [references/data_format.md](references/data_format.md) for data format specifications
@@ -233,7 +239,7 @@ After executing Cox skill, Agent should proactively remind user to view project 
 
 **Example Dialogue**:
 ```
-Agent: Project data generation complete.
+Agent: COX has generated project data for you.
 
 You can view project page through:
 - Static mode: Open observability.html in browser
@@ -244,7 +250,7 @@ Current iteration: Iteration 1 - Core Feature Development
 - In Progress: 1 task
 - Pending: 3 tasks
 
-Recommended next actions:
+COX recommended next actions:
 1. Complete task "User Login API" (priority: high)
 2. Start task "Data Persistence Module" (priority: medium)
 
@@ -259,11 +265,18 @@ Which task would you like to start handling now? Or do you have other ideas?
 - **Data Analysis**: Analyze existing observability data, identify project risks and bottlenecks
 - **Usage Guidance**: Answer solution selection and deployment questions
 - **Data Update Recommendations**: Provide data update recommendations based on development progress
+- **Module Status Update**: Use `scripts/collect_data.py update-module` command to update module maturity after code analysis and user confirmation
+- **User Feedback Handling**: Record user feedback from interactive webpage, incorporate into next iteration planning based on priority
 - **Issue Tracking & Response**: Identify complex issues and recurring issues, automatically update observability data (TODO tasks, hypothesis analysis, instrumentation recommendations)
+
+For detailed workflows, see: [Agent Workflow Guide](references/agent-workflows.md)
 
 ### Script-Implemented Functions
 - **Data Generation**: `scripts/generate_observability_data.py` generates compliant observability data (avoiding LLM hallucinations)
-- **Data Format Validation**: `scripts/collect_data.py` validates JSON data format compliance
+- **Data Collection & Validation**: `scripts/collect_data.py`
+  - Validates JSON data format compliance
+  - **update-module command**: Update module status after code analysis and user confirmation
+  - Usage: `python scripts/collect_data.py update-module --app app_status.json --module "ModuleName" --status optimized --rate 1.0 --notes "..."`
 - **Static Webpage Generation**: `scripts/run_web_observability.py --mode static` generates static HTML files (data inlined, no Flask)
 - **Interactive Webpage Service**: `scripts/run_web_observability.py --mode web` launches Flask Web server
 - **Skill-manager Storage Tool**: `scripts/store_to_skill_manager.py` stores deployment information and issue tracking information
@@ -292,6 +305,25 @@ Agent should follow **MVP (Minimum Viable Product)** principles when breaking do
    - Performance optimization
    - Edge case handling
 
+### Iteration Planning Approach
+
+**两阶段规划**:
+
+**阶段1 - 项目启动时**:
+- 初步规划 2-3 个迭代的大致方向
+- 调用数据生成脚本: `--iterations 3`
+- 生成迭代框架，但 `tasks` 数组为空
+- 每个 iteration 包含 `modules` 列表，但不包含详细任务
+
+**阶段2 - 逐个迭代详细规划**:
+- 规划第一个迭代的详细任务，填充 `tasks` 数组
+- 完成后，基于用户反馈规划下一个迭代
+- 每个迭代都基于最新的用户反馈调整
+
+**关键点**:
+- ✅ 先有迭代框架，逐个填充详细任务
+- ❌ 不是一开始就规划所有迭代的所有细节
+
 ### Iteration Management Process
 
 **Step 1: Requirement Analysis & Iteration Breakdown**
@@ -305,12 +337,13 @@ Agent should automatically infer module list based on project requirements:
 
 ```bash
 # Example: Calculator project
+# ⚠️ Modules are user-verifiable features, NOT technical components
 python scripts/generate_observability_data.py \
   --mode complete \
   --project-name "Calculator Project" \
   --app-name "Calculator App" \
   --iterations 2 \
-  --modules '[{"id":"MOD-001","name":"UI Interface Module"},{"id":"MOD-002","name":"Calculation Logic Module"},{"id":"MOD-003","name":"History Module"}]'
+  --modules '[{"id":"MOD-001","name":"Number Input & Display"},{"id":"MOD-002","name":"Basic Calculations"},{"id":"MOD-003","name":"Clear & Backspace"}]'
 ```
 
 **About Task Generation**:
@@ -333,8 +366,13 @@ python scripts/generate_observability_data.py \
   "modules": [
     {
       "module_id": "MOD-001",
-      "module_name": "UI Interface Module",
+      "module_name": "Number Input & Display",
       "expected_completion": 0.8
+    },
+    {
+      "module_id": "MOD-002",
+      "module_name": "Basic Calculations",
+      "expected_completion": 0.6
     }
   ],
   "tasks": [
@@ -373,16 +411,16 @@ python scripts/generate_observability_data.py \
 ```
 User: Build a calculator
 
-Cox: Understood, I'll help plan the calculator project. Let me first create observability data...
+COX: Understood, I'll help plan the calculator project. Let me first create observability data...
 
-[Cox invokes scripts to generate data, plan iterations and tasks]
+[COX invokes scripts to generate data, plan iterations and tasks]
 
-Cox: Project planning complete:
+COX: Project planning complete:
 📋 Project name: Calculator Project
 📦 Module planning:
-  - UI Interface Module
-  - Calculation Logic Module
-  - History Module
+  - Number Input & Display
+  - Basic Calculations
+  - Clear & Backspace
 
 📅 First iteration plan:
   - Design calculator UI interface
@@ -393,9 +431,9 @@ Cox: Project planning complete:
 
 Development Skill: Task received, starting implementation...
 
-[Cox continuously tracks progress, updates task status]
+[COX continuously tracks progress, updates task status]
 
-Cox: First iteration progress update:
+COX: First iteration progress update:
 ✅ UI interface design - Completed
 ✅ Basic calculation operations - Completed
 ⏳ Testing and optimization - In Progress (60%)
@@ -419,7 +457,7 @@ Module maturity data updated via two methods:
 
 **Example Dialogue**:
 ```
-Agent: Iteration 1 complete, let me confirm module progress:
+Agent: Iteration 1 complete, COX will confirm module progress:
 - User Module (expected completion rate 80%)
   - Current task completion: 3/4 completed
   - Auto-calculated completion rate: 75%
@@ -427,7 +465,7 @@ Agent: Iteration 1 complete, let me confirm module progress:
 
 User: Status is in_progress, actual completion rate is 80%
 
-Agent: Module data updated:
+Agent: COX has updated module data:
 - User Module: status in_progress, completion rate 80%, last updated 2024-01-26
 ```
 
@@ -437,8 +475,18 @@ Agent: Module data updated:
 - **AI Behavior**:
   1. AI continuously tracks data changes on webpage
   2. Uses data to drive subsequent decision strategies
-  3. When user modifies module status, AI will notice and confirm on next interaction
+  3. When user modifies module status, AI will notice and handle accordingly:
+     - If user marks module as `has_issue`: Record the issue for next iteration planning
+     - If user marks module as `pending/developed/confirmed/optimized`: Acknowledge the update
+- **When User Says "Continue" or Plans Next Iteration**:
+  1. Collect all pending tasks and recorded user feedback issues
+  2. Evaluate priority for each item
+  3. Plan next iteration based on priority
+  4. After execution, ask user for confirmation
+  5. Update module status using update-module command
 - **Advantage**: User can update anytime, no need to wait for AI inquiry
+
+详细流程见: [Agent 工作流程指南 - 用户反馈处理](references/agent-workflows.md#user-feedback-handling)
 
 ### Webpage Display Description
 
@@ -455,6 +503,23 @@ Cox's webpage displays grouped by iteration:
 - **Progress Bar**: Visualizes module completion rate
 - **Last Update Time**: Shows last update time of module data
 - **Auto Update**: AI proactive inquiry or user modification on webpage auto-updates
+
+### Modules & Iterations Relationship
+
+**同一个概念，不同视角**:
+
+| 维度 | 迭代中的模块 (project_data.json) | 模块成熟度 (app_status.json) |
+|------|--------------------------------|----------------------------|
+| 文件 | project_data.json | app_status.json |
+| 视角 | 规划：这个迭代要做什么 | 状态：现在做到什么程度 |
+| 字段 | `expected_completion` | `status`, `completion_rate`, `issue_description` |
+| 更新时机 | 迭代规划时 | 开发过程中持续更新 |
+| 作用 | 记录迭代计划 | 追踪实际进度和问题 |
+
+**关键点**:
+- 一个迭代可以涉及多个模块
+- 一个模块可以跨越多个迭代（如 80% → 100%）
+- 通过 `module_id` 关联两个文件中的同一模块
 
 ### Example Scenario
 
@@ -495,6 +560,135 @@ Cox's webpage displays grouped by iteration:
 - Module maturity updated via two methods: AI proactive inquiry (primary) and interactive webpage (auxiliary)
 - Module completion rate auto-calculated by Agent based on task completion, user can adjust
 
+## Task Risk Assessment and Implementation Decision
+
+### Overview
+
+每个任务除了 `priority`（重要等级）外，还有 `risk_level`（风险等级）。Agent 在规划任务时自动评估风险等级，在实施时根据两个维度判断执行策略。
+
+### Risk Assessment Criteria
+
+Agent 根据以下维度自动判断任务风险：
+
+| 判断维度 | high（大风险） | low（小风险） |
+|---------|---------------|--------------|
+| **修改范围** | 核心模块、多文件修改 | 单文件、局部修改 |
+| **影响范围** | 影响多个功能 | 影响单一功能 |
+| **修改类型** | 数据结构变更、架构调整 | UI调整、文本修改 |
+| **可回滚性** | 难以回滚 | 容易回滚 |
+
+**示例**：
+- `high`：修改用户认证流程、重构数据模型、更改 API 接口
+- `low`：调整按钮样式、修改错误提示文案、添加日志输出
+
+### Implementation Decision Logic
+
+**排序规则**：
+1. 首先按 `priority` 排序：critical > high > medium > low
+2. 然后按 `risk_level` 分组
+
+**实施策略**：
+
+| 组合 | 策略 | 说明 |
+|-----|------|------|
+| Critical + Low | 批量处理 | 可以多个任务一起做，批量验证 |
+| Critical + High | 单独处理 + 立即验证 | 一个一个做，每个做完立即验证 |
+| High + Low | 批量处理 | 可以多个任务一起做，批量验证 |
+| High + High | 单独处理 + 立即验证 | 一个一个做，每个做完立即验证 |
+| Medium/Low + Low | 批量处理 | 可以多个任务一起做 |
+| Medium/Low + High | 单独处理 | 建议单独处理，根据情况决定是否立即验证 |
+
+**核心原则**：
+- ✅ 风险小的任务可以一起修改，批量验证，提高效率
+- ❌ 不要将大风险和多个小风险混在一起做
+- ❌ 做了大风险任务后，不要不及时验证
+- ✅ 实施大风险任务后，提醒用户立即验证
+
+### User Reminder Format
+
+在实施高风险任务前或后，Agent 应提醒用户：
+
+```
+**COX 提醒您**：即将实施高风险任务「修改用户认证数据结构」。
+- 涉及文件：user_model.py, auth_service.py
+- 影响范围：所有需要登录的功能
+- 完成后请立即验证登录功能是否正常
+```
+
+或实施后提醒：
+
+```
+**COX 提醒您**：高风险任务「修改用户认证数据结构」已完成。
+请立即验证以下功能：
+1. 用户登录是否正常
+2. 注册流程是否正常
+3. 会话保持是否正常
+
+验证通过后，我将继续下一个任务。
+```
+
+### Example Workflow
+
+```
+Agent: 当前迭代有以下待处理任务：
+
+按优先级和风险排序：
+1. [Critical+High] 修改用户认证数据结构 → 单独处理
+2. [Critical+Low] 优化登录API响应时间 → 可批量处理
+3. [High+Low] 添加用户头像功能 → 可批量处理
+4. [Medium+High] 重构权限管理系统 → 单独处理
+
+建议实施顺序：
+**第一批（低风险批量）**：任务2 + 任务3
+- 一起修改，完成后批量验证
+
+**第二批（高风险单独）**：任务1
+- 单独处理，完成后立即验证
+
+**COX 提醒您**：任务1涉及核心数据结构变更，完成后请务必验证所有登录相关功能。
+
+用户确认后，我再继续任务4。
+```
+
+## User Feedback Handling Process
+
+### Overview
+
+当用户在交互式网页上标记模块为 `has_issue` 时，Agent 应记录问题，在下次规划迭代时按优先级处理。
+
+### Priority Guidelines
+
+| Priority | Type | Examples |
+|----------|------|----------|
+| Critical | Security issues | Data breaches, authentication bypass |
+| High | Functional bugs | Core features not working, crashes |
+| High | Performance issues | Slow response, timeouts |
+| Medium | UI/UX improvements | "Not beautiful enough", hard to use |
+| Medium | Minor bugs | Typos, small visual issues |
+| Low | Feature suggestions | "Would be nice to have..." |
+
+### Flow Summary
+
+```
+User marks has_issue
+    ↓
+COX records issue (don't fix immediately)
+    ↓
+Continue current work
+    ↓
+User says "Continue" or "Plan next iteration"
+    ↓
+COX prioritizes all issues + tasks
+    ↓
+Plan iteration based on priority
+    ↓
+Execute and confirm with user
+    ↓
+Update module status
+```
+
+For detailed workflow and dialogue examples, see: [Agent Workflow Guide - User Feedback Handling](references/agent-workflows.md#user-feedback-handling)
+
 ## Issue Tracking & Response
 
 ### Trigger Conditions
@@ -518,7 +712,7 @@ See [references/issue_tracking_details.md](references/issue_tracking_details.md)
 4. Update project_data.json: add TODO tasks and hypotheses
 5. Update test_metrics.json: add instrumentation recommendations
 6. Invoke skill-manager to store issue tracking information
-7. Report taken observation update measures to user
+7. **COX** reports taken observation update measures to user
 
 ## Resource Index
 - **Data Format Specifications**: See [references/data_format.md](references/data_format.md) (format definitions, validation rules, and examples for all data files)

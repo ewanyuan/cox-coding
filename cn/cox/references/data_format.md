@@ -27,6 +27,7 @@
           "status": "任务状态",
           "assignee": "负责人",
           "priority": "优先级",
+          "risk_level": "风险等级",
           "tags": ["标签1", "标签2"]
         }
       ],
@@ -68,6 +69,7 @@
 | iterations[].tasks[].status | string | 是 | 任务状态：`todo`/`in_progress`/`review`/`done`/`blocked` |
 | iterations[].tasks[].assignee | string | 否 | 负责人 |
 | iterations[].tasks[].priority | string | 否 | 优先级：`low`/`medium`/`high`/`critical` |
+| iterations[].tasks[].risk_level | string | 否 | 风险等级：`low`/`high`，Agent 根据修改范围和影响自动评估 |
 | iterations[].tasks[].tags | array | 否 | 标签列表 |
 | iterations[].modules | array | 是 | 涉及的模块列表 |
 | iterations[].modules[].module_id | string | 是 | 模块唯一标识 |

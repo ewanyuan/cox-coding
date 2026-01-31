@@ -27,6 +27,7 @@
           "status": "Task Status",
           "assignee": "Assignee",
           "priority": "Priority",
+          "risk_level": "Risk Level",
           "tags": ["tag1", "tag2"]
         }
       ],
@@ -68,6 +69,7 @@
 | iterations[].tasks[].status | string | Yes | Task status: `todo`/`in_progress`/`review`/`done`/`blocked` |
 | iterations[].tasks[].assignee | string | No | Assignee |
 | iterations[].tasks[].priority | string | No | Priority: `low`/`medium`/`high`/`critical` |
+| iterations[].tasks[].risk_level | string | No | Risk level: `low`/`high`. Agent assesses based on modification scope and impact |
 | iterations[].tasks[].tags | array | No | Tag list |
 | iterations[].modules | array | Yes | Involved module list |
 | iterations[].modules[].module_id | string | Yes | Module unique identifier |
