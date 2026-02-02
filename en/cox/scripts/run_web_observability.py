@@ -466,7 +466,26 @@ def get_dashboard_html(mode='static'):
             'uncertain': { bg: 'bg-yellow-500/10', text: 'text-yellow-400' }
         };
 
-        function getStatusBadge(status) {
+        // Priority 和 Risk Level 翻译配置
+        const priorityLabels = {
+            'zh': { 'critical': '紧急', 'high': '高', 'medium': '中', 'low': '低' },
+            'en': { 'critical': 'Critical', 'high': 'High', 'medium': 'Medium', 'low': 'Low' }
+        };
+        
+        const riskLabels = {
+            'zh': { 'high': '大风险', 'low': '小风险' },
+            'en': { 'high': 'High Risk', 'low': 'Low Risk' }
+        };
+        
+        function getPriorityLabel(priority) {
+            return priorityLabels[currentLang][priority] || priority;
+        }
+        
+        function getRiskLabel(risk) {
+            return riskLabels[currentLang][risk] || risk;
+        }
+
+                function getStatusBadge(status) {
             const key = status.toLowerCase();
             const cfg = statusConfig[key] || { bg: 'bg-zinc-800', text: 'text-zinc-400' };
             const label = translations[currentLang].status[key] || status;
@@ -576,8 +595,8 @@ def get_dashboard_html(mode='static'):
                                                 <div class="flex items-center gap-3 mt-1 text-xs text-zinc-500">
                                                     <span>${task.task_id}</span>
                                                     ${task.assignee ? `<span><i data-lucide="user" class="w-3 h-3 inline mr-1"></i>${task.assignee}</span>` : ''}
-                                                    ${task.priority ? `<span class="px-1.5 py-0.5 rounded ${task.priority === 'high' || task.priority === 'critical' ? 'bg-red-500/10 text-red-400' : 'bg-zinc-700/50 text-zinc-400'}">${task.priority}</span>` : ''}
-                                                    ${task.risk_level ? `<span class="px-1.5 py-0.5 rounded ${task.risk_level === 'high' ? 'bg-orange-500/10 text-orange-400' : 'bg-emerald-500/10 text-emerald-400'}">${task.risk_level}</span>` : ''}
+                                                    ${task.priority ? `<span class="px-1.5 py-0.5 rounded ${task.priority === 'high' || task.priority === 'critical' ? 'bg-red-500/10 text-red-400' : 'bg-zinc-700/50 text-zinc-400'}">${getPriorityLabel(task.priority)}</span>` : ''}
+                                                    ${task.risk_level ? `<span class="px-1.5 py-0.5 rounded ${task.risk_level === 'high' ? 'bg-orange-500/10 text-orange-400' : 'bg-emerald-500/10 text-emerald-400'}">${getRiskLabel(task.risk_level)}</span>` : ''}
                                                 </div>
                                             </div>
                                         </div>
@@ -1133,7 +1152,26 @@ def get_static_html_template():
             'has_issue': { bg: 'bg-red-500/10', text: 'text-red-400', label: '有问题' }
         };
 
-        function getStatusBadge(status) {
+        // Priority 和 Risk Level 翻译配置
+        const priorityLabels = {
+            'zh': { 'critical': '紧急', 'high': '高', 'medium': '中', 'low': '低' },
+            'en': { 'critical': 'Critical', 'high': 'High', 'medium': 'Medium', 'low': 'Low' }
+        };
+        
+        const riskLabels = {
+            'zh': { 'high': '大风险', 'low': '小风险' },
+            'en': { 'high': 'High Risk', 'low': 'Low Risk' }
+        };
+        
+        function getPriorityLabel(priority) {
+            return priorityLabels[currentLang][priority] || priority;
+        }
+        
+        function getRiskLabel(risk) {
+            return riskLabels[currentLang][risk] || risk;
+        }
+
+                function getStatusBadge(status) {
             const key = status ? status.toLowerCase() : 'pending';
             const cfg = statusConfig[key] || { bg: 'bg-zinc-800', text: 'text-zinc-400', label: status || '未知' };
             return `<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${cfg.bg} ${cfg.text}">${cfg.label}</span>`;
@@ -1221,7 +1259,7 @@ def get_static_html_template():
                                                     <div class="flex items-center gap-3 mt-1 text-xs text-zinc-500">
                                                         <span>${task.task_id}</span>
                                                         ${task.assignee ? `<span><i data-lucide="user" class="w-3 h-3 inline mr-1"></i>${task.assignee}</span>` : ''}
-                                                        ${task.priority ? `<span class="px-1.5 py-0.5 rounded ${task.priority === 'high' || task.priority === 'critical' ? 'bg-red-500/10 text-red-400' : 'bg-zinc-700/50 text-zinc-400'}">${task.priority}</span>` : ''}
+                                                        ${task.priority ? `<span class="px-1.5 py-0.5 rounded ${task.priority === 'high' || task.priority === 'critical' ? 'bg-red-500/10 text-red-400' : 'bg-zinc-700/50 text-zinc-400'}">${getPriorityLabel(task.priority)}</span>` : ''}
                                                         ${task.risk_level ? `<span class="px-1.5 py-0.5 rounded ${task.risk_level === 'high' ? 'bg-orange-500/10 text-orange-400' : 'bg-emerald-500/10 text-emerald-400'}">${task.risk_level}</span>` : ''}
                                                     </div>
                                                 </div>

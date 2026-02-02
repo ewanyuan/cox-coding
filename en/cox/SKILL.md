@@ -575,16 +575,16 @@ Cox's webpage displays grouped by iteration:
 
 Agent 根据以下维度自动判断任务风险：
 
-| 判断维度 | high（大风险） | low（小风险） |
+| Assessment Dimension | high (High Risk) | low (Low Risk) |
 |---------|---------------|--------------|
-| **修改范围** | 核心模块、多文件修改 | 单文件、局部修改 |
-| **影响范围** | 影响多个功能 | 影响单一功能 |
-| **修改类型** | 数据结构变更、架构调整 | UI调整、文本修改 |
-| **可回滚性** | 难以回滚 | 容易回滚 |
+| **Modification Scope** | Core modules, multi-file modification | Single file, local modification |
+| **Impact Scope** | Affects multiple functions | Affects single function |
+| **Modification Type** | Data structure change, architecture adjustment | UI adjustment, text modification |
+| **Rollback** | Difficult to rollback | Easy to rollback |
 
-**示例**：
-- `high`：修改用户认证流程、重构数据模型、更改 API 接口
-- `low`：调整按钮样式、修改错误提示文案、添加日志输出
+**Examples**:
+- `high`: Modify authentication flow, refactor data model, change API
+- `low`: Adjust button styles, modify error messages, add logs
 
 ### Implementation Decision Logic
 

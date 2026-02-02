@@ -50,7 +50,7 @@ def check_file_exists(file_path, overwrite=False):
     return True
 
 
-def generate_project_data(project_name, mode='minimal', iterations=1, custom_modules=None):
+def generate_project_data(project_name, mode='minimal', iterations=1, custom_modules=None, iteration_names=None):
     """生成项目维度数据
     
     Args:
@@ -58,6 +58,7 @@ def generate_project_data(project_name, mode='minimal', iterations=1, custom_mod
         mode: 数据模式（minimal/complete）
         iterations: 迭代数量
         custom_modules: 自定义模块列表，格式为 [{"id": "MOD-001", "name": "模块名称"}, ...]
+        iteration_names: 自定义迭代名称列表，格式为 ["迭代1名称", "迭代2名称", ...]
     """
     project_data = {
         "project_name": project_name,
@@ -69,7 +70,7 @@ def generate_project_data(project_name, mode='minimal', iterations=1, custom_mod
         project_data["iterations"] = [
             {
                 "iteration_id": "ITER-001",
-                "iteration_name": "第一次迭代",
+                "iteration_name": iteration_names[0] if iteration_names else "第一次迭代",
                 "status": "in_progress",
                 "start_date": (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d"),
                 "end_date": (datetime.now() + timedelta(days=7)).strftime("%Y-%m-%d"),
@@ -102,6 +103,12 @@ def generate_project_data(project_name, mode='minimal', iterations=1, custom_mod
 
             tasks = []  # 不生成示例任务，由用户手动添加
 
+            # 使用自定义迭代名称或默认名称
+            if iteration_names and i - 1 < len(iteration_names):
+                iteration_name = iteration_names[i - 1]
+            else:
+                iteration_name = f"第{i}次迭代"
+
             # 为每个迭代分配模块
             # 优先使用自定义模块，否则使用默认模块列表
             if custom_modules:
@@ -128,7 +135,7 @@ def generate_project_data(project_name, mode='minimal', iterations=1, custom_mod
 
             project_data["iterations"].append({
                 "iteration_id": iteration_id,
-                "iteration_name": f"第{i}次迭代",
+                "iteration_name": iteration_name,
                 "status": status,
                 "start_date": start_date.strftime("%Y-%m-%d"),
                 "end_date": end_date.strftime("%Y-%m-%d"),
@@ -279,6 +286,8 @@ def main():
                        help='输出目录（默认: 当前目录）')
     parser.add_argument('--modules', default=None,
                        help='自定义模块列表（JSON格式: [{"id":"MOD-001","name":"模块1"},{"id":"MOD-002","name":"模块2"}]）')
+    parser.add_argument('--iteration-names', default=None,
+                       help='自定义迭代名称列表（JSON格式: ["迭代1名称","迭代2名称",...])')
     parser.add_argument('--overwrite', action='store_true',
                        help='强制覆盖已存在的文件（默认会报错）')
 
@@ -294,6 +303,19 @@ def main():
             print(f"[ERROR] 模块列表JSON格式错误: {e}")
             exit(1)
 
+    # 解析自定义迭代名称列表
+    iteration_names = None
+    if args.iteration_names:
+        try:
+            iteration_names = json.loads(args.iteration_names)
+            print(f"[INFO] 使用自定义迭代名称: {iteration_names}")
+            if len(iteration_names) != args.iterations:
+                print(f"[WARNING] 迭代名称数量与迭代数量不匹配，将混合使用")
+        except json.JSONDecodeError as e:
+            print(f"[ERROR] 迭代名称列表JSON格式错误: {e}")
+            exit(1)
+
+
     # 创建输出目录
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -303,7 +325,7 @@ def main():
     print(f"[INFO] 项目名称: {args.project_name}")
     print(f"[INFO] 应用名称: {args.app_name}")
 
-    project_data = generate_project_data(args.project_name, args.mode, args.iterations, custom_modules)
+    project_data = generate_project_data(args.project_name, args.mode, args.iterations, custom_modules, iteration_names)
     app_data = generate_app_data(args.app_name, args.mode, custom_modules)
     test_data = generate_test_data(args.mode, custom_modules)
 

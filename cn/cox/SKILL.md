@@ -107,6 +107,11 @@ python scripts/generate_observability_data.py \
   --iterations 2 \
   --modules '[{"id":"MOD-001","name":"UI界面模块"},{"id":"MOD-002","name":"计算逻辑模块"}]'
 
+
+# 方式2.5：使用自定义迭代名称（推荐）
+# 为每个迭代指定有意义的名称，而不是默认的"第N次迭代"
+python scripts/generate_observability_data.py   --mode complete   --project-name "计算器项目"   --app-name "计算器应用"   --iterations 4   --modules '[{"id":"MOD-001","name":"UI界面模块"},{"id":"MOD-002","name":"计算逻辑模块"}]'   --iteration-names '["核心基础与平台配置","计划管理与假设管理","内容生成工作流","智能辅助与优化"]'
+
 # 方式3：生成完整示例（包含测试套件框架，但任务、埋点、异常留空）
 python scripts/generate_observability_data.py \
   --mode complete \
