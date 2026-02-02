@@ -107,6 +107,11 @@ python scripts/generate_observability_data.py \
   --iterations 2 \
   --modules '[{"id":"MOD-001","name":"UI Interface Module"},{"id":"MOD-002","name":"Calculation Logic Module"}]'
 
+
+# Method 2.5: Use custom iteration names (recommended)
+# Specify meaningful names for each iteration, instead of the default "Iteration N"
+python scripts/generate_observability_data.py   --mode complete   --project-name "Calculator Project"   --app-name "Calculator App"   --iterations 4   --modules '[{"id":"MOD-001","name":"UI Interface Module"},{"id":"MOD-002","name":"Calculation Logic Module"}]'   --iteration-names '["Core Foundation & Platform","Plan Management & Assumption","Content Generation","Smart Optimization"]'
+
 # Method 3: Generate complete example (includes test suite framework, but tasks, instrumentation points, anomalies left empty)
 python scripts/generate_observability_data.py \
   --mode complete \
