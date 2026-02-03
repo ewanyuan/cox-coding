@@ -2,8 +2,8 @@
 
 ## 目录
 - [环境准备](#环境准备)
-- [简单方案部署](#简单方案部署)
-- [中等方案部署](#中等方案部署)
+- [静态网页方案部署](#静态网页方案部署)
+- [交互网页方案部署](#交互网页方案部署)
 - [全面方案部署](#全面方案部署)
 - [方案迁移](#方案迁移)
 - [常见问题](#常见问题)
@@ -14,10 +14,10 @@
 - Python 3.7+
 - pip包管理工具
 
-### 简单方案环境
+### 静态网页方案环境
 无需额外依赖，Python标准库即可
 
-### 中等方案环境
+### 交互网页方案环境
 安装Flask依赖：
 ```bash
 pip install flask>=2.0.0
@@ -28,7 +28,7 @@ pip install flask>=2.0.0
 - Docker Compose 2.0+
 - 至少2GB可用内存
 
-## 简单方案部署
+## 静态网页方案部署
 
 ### 部署步骤
 
@@ -38,36 +38,32 @@ pip install flask>=2.0.0
    - `app_status.json`
    - `test_metrics.json`
 
-2. **生成可观测日志**
+2. **生成静态网页**
    ```bash
-   python scripts/generate_observability_log.py \
+   python scripts/run_web_observability.py \
+     --mode static \
      --project project_data.json \
      --app app_status.json \
-     --test test_metrics.json
+     --test test_metrics.json \
+     --output observability.html
    ```
 
-3. **查看日志输出**
-   脚本会在终端输出格式化的可观测信息，同时生成日志文件 `observability.log`
+3. **查看生成的网页**
+   脚本会生成 `observability.html` 文件，可以直接在浏览器中打开查看
 
-4. **分析日志**
+4. **刷新数据**
+   重新运行上述命令即可重新生成最新数据的HTML文件
    ```bash
-   # 查看完整日志
-   cat observability.log
-
-   # 过滤特定维度
-   grep "PROJECT:" observability.log
-   grep "APP:" observability.log
-   grep "TEST:" observability.log
-
-   # 查看异常信息
-   grep "ANOMALY:" observability.log
+   # 重新生成
+   python scripts/run_web_observability.py --mode static --project project_data.json --app app_status.json --test test_metrics.json --output observability.html
    ```
 
 ### 参数说明
 - `--project`：项目数据文件路径（必填）
 - `--app`：应用状态文件路径（必填）
 - `--test`：测试指标文件路径（必填）
-- `--output`：输出日志文件路径（可选，默认：observability.log）
+- `--mode`：运行模式（必填，static表示静态网页模式）
+- `--output`：输出HTML文件路径（可选，默认：observability.html）
 
 ### 优势
 - 零配置，即用即走
@@ -79,12 +75,12 @@ pip install flask>=2.0.0
 - 不支持多用户访问
 - 无历史数据对比
 
-## 中等方案部署
+## 交互网页方案部署
 
 ### 部署步骤
 
 1. **准备数据文件**
-   同简单方案，创建三个JSON数据文件
+   同静态网页方案，创建三个JSON数据文件
 
 2. **安装依赖**
    ```bash
@@ -94,6 +90,7 @@ pip install flask>=2.0.0
 3. **启动Web服务**
    ```bash
    python scripts/run_web_observability.py \
+     --mode web \
      --project project_data.json \
      --app app_status.json \
      --test test_metrics.json \
@@ -110,6 +107,7 @@ pip install flask>=2.0.0
 - `--project`：项目数据文件路径（必填）
 - `--app`：应用状态文件路径（必填）
 - `--test`：测试指标文件路径（必填）
+- `--mode`：运行模式（必填，web表示交互网页模式）
 - `--port`：Web服务端口（可选，默认：5000）
 - `--refresh-interval`：自动刷新间隔秒数（可选，默认：30）
 
@@ -124,6 +122,7 @@ pip install flask>=2.0.0
 修改服务监听地址：
 ```bash
 python scripts/run_web_observability.py \
+  --mode web \
   --project project_data.json \
   --app app_status.json \
   --test test_metrics.json \
@@ -235,23 +234,23 @@ python scripts/collect_data.py export-prometheus \
 4. 验证数据正确性
 5. 逐步切换到新系统
 
-### 全面 -> 中等/简单
+### 全面 -> 交互网页/静态网页
 如需降级：
 1. 保留原始JSON数据文件
-2. 直接使用中等或简单方案的脚本
+2. 直接使用交互网页或静态网页方案的脚本
 3. 清理Docker容器和镜像
 
 ## 常见问题
 
-### 简单方案相关问题
+### 静态网页方案相关问题
 
-**Q：日志文件太大如何处理？**
-A：可以定期清理或使用日志轮转工具，如 `logrotate`。
+**Q：HTML文件过大如何处理？**
+A：可以定期清理或重新生成，保持数据文件简洁。
 
 **Q：如何筛选特定迭代的数据？**
-A：使用 `grep` 过滤：`grep "ITERATION-ID" observability.log`
+A：重新生成静态网页时使用过滤参数（如有支持）或手动在页面中查找。
 
-### 中等方案相关问题
+### 交互网页方案相关问题
 
 **Q：Web界面无法访问？**
 A：检查端口是否被占用，尝试修改 `--port` 参数；检查防火墙设置。
