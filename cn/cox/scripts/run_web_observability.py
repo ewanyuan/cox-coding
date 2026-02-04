@@ -78,6 +78,10 @@ if FLASK_AVAILABLE:
     def get_data():
         return jsonify(data_manager.get_all_data())
 
+    @app.route('/favicon.ico')
+    def favicon():
+        return '', 204
+
     @app.route('/api/update/module', methods=['POST'])
     def update_module_status():
         """更新模块状态和问题描述（仅交互模式）"""
@@ -475,11 +479,6 @@ def get_dashboard_html(mode='static'):
             'zh': { 'high': '大风险', 'low': '小风险' },
             'en': { 'high': 'High Risk', 'low': 'Low Risk' }
         };
-        
-        // 静态模式固定使用中文，如果尚未定义则定义默认语言
-        if(typeof currentLang === 'undefined') {
-            const currentLang = 'zh';
-        }
         
         function getPriorityLabel(priority) {
             return priorityLabels[currentLang][priority] || priority;
@@ -1170,10 +1169,8 @@ def get_static_html_template():
             'en': { 'high': 'High Risk', 'low': 'Low Risk' }
         };
         
-        // 静态模式固定使用中文，如果尚未定义则定义默认语言
-        if(typeof currentLang === 'undefined') {
-            const currentLang = 'zh';
-        }
+        // 静态模式固定使用中文，定义全局语言变量
+        let currentLang = 'zh';
         
         function getPriorityLabel(priority) {
             return priorityLabels[currentLang][priority] || priority;

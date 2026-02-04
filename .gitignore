@@ -1,1 +1,6 @@
 *.pyc
+cn/cox/app_status.json
+cn/cox/project_data.json
+cn/cox/test_data.json
+cn/cox/test_metrics.json
+cn/static_observability_test.html

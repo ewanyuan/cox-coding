@@ -163,54 +163,40 @@ python scripts/generate_observability_data.py \
 - 直接修改生成的 JSON 文件以适应实际项目
 - 数据格式说明见 [references/data_format.md](references/data_format.md)
 
-### 步骤2：启动观测面板
+### 步骤2：选择方案并启动
 
-**推荐方式：使用一键启动脚本**
-
+**交互网页方案（推荐）**：
 ```bash
-# 方式1：启动Web交互模式（需要Flask）
-python start_cox_dashboard.py --web
-
-# 方式2：生成静态HTML（无需Flask）
-python start_cox_dashboard.py --static
-
-# 方式3：初始化示例数据
-python start_cox_dashboard.py --init
-```
-
-**一键启动脚本功能**：
-- 自动检测数据文件是否存在
-- 如果不存在，自动生成示例数据
-- 根据参数自动选择Web模式或静态模式
-- 无需记忆复杂的命令行参数
-
-**访问地址**：
-- Web模式：访问 http://localhost:5000
-- 静态模式：直接用浏览器打开生成的 `observability.html`
-
-**手动启动方式（不推荐）**：
-
-如果一键脚本无法使用，可以手动启动：
-
-```bash
-# Web交互模式（需要先安装 Flask：pip install flask）
+# 启动 Web 服务器（需要先安装 Flask：pip install flask）
 python scripts/run_web_observability.py \
   --mode web \
   --project project_data.json \
   --app app_status.json \
-  --test test_metrics.json
+  --test test_metrics.json \
+  --host 127.0.0.1 \
+  --port 5000
 
-# 静态网页模式
+# 访问 http://127.0.0.1:5000 查看界面，数据每 30 秒自动刷新
+```
+
+**静态网页方案**：
+```bash
+# 生成静态 HTML 文件（无需 Flask）
+# 数据会被内联到 HTML 中，无需额外的 JSON 文件
 python scripts/run_web_observability.py \
   --mode static \
   --project project_data.json \
   --app app_status.json \
-  --test test_metrics.json
+  --test test_metrics.json \
+  --output observability.html
+
+# 直接用浏览器打开 observability.html 查看界面
+# 数据已内联，无需其他文件
 ```
 
 **说明**：
-- Web模式：数据实时更新，无需重新生成，访问 http://127.0.0.1:5000 查看界面
-- 静态模式：数据内联到 HTML 文件中，生成一次后数据固定
+- Web 模式：数据实时更新，无需重新生成，访问 http://127.0.0.1:5000 查看界面
+- 静态模式：数据内联到 HTML 文件中，生成一次后数据固定，点击刷新按钮可重新渲染
 
 ### 步骤3：调用skill-manager存储部署信息
 部署完成后，调用 **skill-manager** 技能存储部署信息，便于后续管理和技能协作。
