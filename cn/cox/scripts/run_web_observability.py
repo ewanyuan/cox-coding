@@ -716,7 +716,7 @@ def get_dashboard_html(mode='static'):
                 : `<p class="text-zinc-500 text-sm text-center py-4">${t.healthy}</p>`;
 
             // 假设分析（交互模式：支持状态更新）
-            const allAssumptions = p.iterations.flatMap(i => i.assumptions || []);
+            const allAssumptions = (p.iterations || []).flatMap(i => i.assumptions || []);
             document.getElementById('assumptions-list').innerHTML = allAssumptions.length
                 ? allAssumptions.map(assump => `
                     <div class="p-3 bg-zinc-900/40 rounded-lg border border-zinc-800/50">
@@ -802,8 +802,8 @@ def get_dashboard_html(mode='static'):
 
         function analyzeTeamData(project, app) {
             const teamStats = {};
-            project.iterations.forEach(iter => {
-                iter.tasks.forEach(task => {
+            (project.iterations || []).forEach(iter => {
+                (iter.tasks || []).forEach(task => {
                     if (task.assignee) {
                         if (!teamStats[task.assignee]) teamStats[task.assignee] = { tasks: 0, modules: 0, completed: 0, total: 0 };
                         teamStats[task.assignee].tasks++;
@@ -812,7 +812,7 @@ def get_dashboard_html(mode='static'):
                     }
                 });
             });
-            app.modules.forEach(m => {
+            (app.modules || []).forEach(m => {
                 if (m.owner) {
                     if (!teamStats[m.owner]) teamStats[m.owner] = { tasks: 0, modules: 0, completed: 0, total: 0 };
                     teamStats[m.owner].modules++;
@@ -832,9 +832,11 @@ def get_dashboard_html(mode='static'):
             canvas.width = canvas.parentElement.offsetWidth;
             canvas.height = canvas.parentElement.offsetHeight;
 
-            const metricName = perfHistory[0].metrics[0].name;
-            const data = perfHistory.map(h => h.metrics[0].response_time);
-            const labels = perfHistory.map(h => h.timestamp.split(' ')[1]);
+            if (!perfHistory || perfHistory.length === 0) return;
+
+            const metricName = perfHistory[0]?.metrics?.[0]?.name || '响应时间';
+            const data = perfHistory.map(h => h.metrics?.[0]?.response_time || 0);
+            const labels = perfHistory.map(h => h.timestamp?.split(' ')[1] || '');
 
             const padding = 40;
             const chartWidth = canvas.width - padding * 2;
@@ -1302,7 +1304,7 @@ def get_static_html_template():
                     `;
                 }).join('');
 
-                const developedModules = a.modules.filter(m => 
+                const developedModules = (a.modules || []).filter(m => 
                     m.status === 'confirmed' || 
                     m.status === 'optimized' || 
                     m.status === 'has_issue'

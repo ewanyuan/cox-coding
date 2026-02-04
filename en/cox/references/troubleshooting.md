@@ -1,4 +1,4 @@
-# Cox Skill FAQ and Troubleshooting
+# Cox Skill Common Issues and Troubleshooting
 
 ## Table of Contents
 - [JSON File Format Issues](#1-json-file-format-issues)
@@ -11,10 +11,10 @@
 ## 1. JSON File Format Issues
 
 ### Problem Manifestation
-When generating observability interface, JSON decoding error occurs, prompting "Extra data".
+JSON decoding error occurs when generating observable interface, showing "Extra data".
 
-### Impact
-- Unable to generate project observability interface
+### Situations Caused
+- Unable to generate project observable interface
 - Affects project progress tracking
 
 ### Root Cause
@@ -25,19 +25,19 @@ File contains invisible characters and encoding issues, possibly due to:
 
 ### Troubleshooting Methods
 
-#### Method 1: Use cat -A to View Invisible Characters
+#### Method 1: Use cat -A to view invisible characters
 ```bash
 cat -A project_data.json
 ```
-If seeing `^M`, `^I` or other special characters, encoding issues exist.
+If you see `^M`, `^I` or other special characters, encoding issues exist.
 
-#### Method 2: Use Python to Validate JSON Format
+#### Method 2: Use Python to verify JSON format
 ```bash
 python -m json.tool project_data.json > /dev/null
 ```
-If returns error message, JSON format has issues.
+If error messages are returned, JSON format has issues.
 
-#### Method 3: Use Python to Read and Rewrite
+#### Method 3: Use Python to read and rewrite
 ```python
 import json
 
@@ -48,31 +48,31 @@ with open('project_data.json', 'w', encoding='utf-8') as f:
     json.dump(data, f, ensure_ascii=False, indent=2)
 ```
 
-### Resolution Method
-1. **Use cat -A to view actual file content**, discover massive invisible characters
-2. **Recreate file and overwrite content**, clear invisible characters
+### Modification Methods
+1. **Use cat -A to view actual file content**, discovering numerous invisible characters
+2. **Recreate file and overwrite content**, clearing invisible characters
 3. **Use python -m json.tool to verify JSON format correctness**
 
-### Preventive Measures
+### Prevention Measures
 - Use scripts to generate data, avoid manual editing
-- Use UTF-8 encoding supported editors when editing JSON files
-- Avoid copy-pasting JSON content from untrusted sources
+- Use editors supporting UTF-8 encoding when editing JSON files
+- Avoid copying and pasting JSON content from untrusted sources
 
 ---
 
 ## 2. Module ID Inconsistency Issues
 
 ### Problem Manifestation
-Module IDs in app_status.json don't match module IDs in project_data.json.
+Module IDs in app_status.json do not match those in project_data.json.
 
-### Impact
-- Observability interface cannot correctly correlate project data and application status data
-- Module maturity information cannot display correctly
+### Situations Caused
+- Observable interface unable to correctly associate project data and application status data
+- Module maturity information unable to display correctly
 
 ### Root Cause
-Initially generated data files used default "example modules", but manual modification of project_data.json used new module names, causing module information inconsistency between two files.
+Initial generated data files used default "example modules", while manually modifying project_data.json used new module names, causing module information inconsistency between the two files.
 
-### Example Problem
+### Example Problems
 
 **project_data.json**:
 ```json
@@ -98,9 +98,9 @@ Initially generated data files used default "example modules", but manual modifi
 }
 ```
 
-### Resolution Method
+### Modification Methods
 1. **Unify module IDs and names in both files**
-2. **Ensure Calculation Core Module and User Interface Module remain consistent in both files**
+2. **Ensure calculation core module and user interface module remain consistent in both files**
 
 #### Correct Example
 
@@ -152,15 +152,15 @@ for module in app_data['modules']:
 # Check consistency
 if project_modules != app_modules:
     print("❌ Module inconsistency!")
-    print(f"Modules in project_data.json: {project_modules}")
-    print(f"Modules in app_status.json: {app_modules}")
+    print(f"project_data.json modules: {project_modules}")
+    print(f"app_status.json modules: {app_modules}")
 else:
     print("✅ Modules consistent")
 ```
 
-### Preventive Measures
-- Use `--modules` parameter to define all modules at once, ensuring both files use same module list
-- When modifying module information, synchronously update both files
+### Prevention Measures
+- Use `--modules` parameter to define all modules at once, ensuring both files use the same module list
+- When modifying module information, update both files simultaneously
 - After generating data, use check script to verify module consistency
 
 ---
@@ -170,13 +170,13 @@ else:
 ### Problem Manifestation
 Unable to directly delete or modify certain files.
 
-### Impact
-- Unable to clean corrupted files through conventional methods
+### Situations Caused
+- Unable to clean corrupted files via conventional methods
 - Unable to update data files
 
 ### Root Cause
 - Improper file system permission settings
-- File locked by other process
+- File locked by other processes
 - Insufficient file owner permissions
 
 ### Troubleshooting Methods
@@ -184,13 +184,13 @@ Unable to directly delete or modify certain files.
 # View file permissions
 ls -la project_data.json
 
-# Check if file is locked
+# View if file is locked
 lsof project_data.json
 ```
 
-### Resolution Method
+### Modification Methods
 
-#### Method 1: Use Python Code to Replace bash Commands
+#### Method 1: Use Python code instead of bash commands
 ```python
 import os
 
@@ -200,7 +200,7 @@ if os.path.exists('project_data.json'):
     print("File deleted")
 ```
 
-#### Method 2: Overwrite File Content via Edit Mode
+#### Method 2: Overwrite file content through edit mode
 ```python
 import json
 
@@ -208,46 +208,46 @@ with open('project_data.json', 'w', encoding='utf-8') as f:
     json.dump(data, f, ensure_ascii=False, indent=2)
 ```
 
-#### Method 3: Modify File Permissions (if needed)
+#### Method 3: Modify file permissions (if needed)
 ```bash
 chmod 644 project_data.json
 ```
 
-### Preventive Measures
-- Avoid attempting to modify files while being used by other processes
+### Prevention Measures
+- Avoid attempting modifications when file is used by other processes
 - Use appropriate file permissions (644 sufficient for data files)
-- Avoid creating files as root user, causing subsequent permission issues
+- Avoid creating files as root user, which causes subsequent permission issues
 
 ---
 
 ## Experience Summary
 
 ### Data Consistency
-**Principle**: When using Cox skill, must ensure data consistency across all data files, especially module ID and name matching.
+**Principle**: When using Cox skill, must ensure data consistency between all data files, especially matching of module IDs and names.
 
 **Key Files**:
 - `project_data.json`: Project iteration and task data
 - `app_status.json`: Application module status data
-- `test_metrics.json`: Test instrumentation and anomaly data
+- `test_metrics.json`: Test tracing points and anomaly data
 
-**Consistency Checklist**:
+**Consistency Check List**:
 - [ ] Module IDs consistent in both files
 - [ ] Module names consistent in both files
 - [ ] Task-referenced module IDs exist in app_status.json
-- [ ] All JSON files have correct format
+- [ ] All JSON file formats correct
 
 ### Format Validation
-**Principle**: Before generating observability interface, should first verify all JSON files have correct format.
+**Principle**: Before generating observable interface, should first verify format correctness of all JSON files.
 
-**Validation Steps**:
-1. Use `python -m json.tool` to validate each JSON file
+**Verification Steps**:
+1. Use `python -m json.tool` to verify each JSON file
 2. Use check script to verify module consistency
-3. Confirm correctness before invoking `run_web_observability.py`
+3. Confirm no issues before calling `run_web_observability.py`
 
-**Automated Validation Script**:
+**Automated Verification Script**:
 ```bash
 #!/bin/bash
-echo "Validating JSON format..."
+echo "Verifying JSON format..."
 
 for file in project_data.json app_status.json test_metrics.json; do
     echo -n "Checking $file... "
@@ -263,13 +263,13 @@ echo "All files format correct"
 ```
 
 ### Encoding Issues
-**Principle**: When handling JSON files containing Chinese characters, pay special attention to encoding issues, avoid invisible character occurrence.
+**Principle**: When handling JSON files containing Chinese characters, pay special attention to encoding issues to avoid invisible characters.
 
-**Precautions**:
+**Considerations**:
 - Always use UTF-8 encoding
-- Choose UTF-8 supported editors (VS Code, Sublime Text, etc.)
-- Avoid using Windows Notepad to edit JSON files
-- When saving, choose "UTF-8 without BOM" format
+- Choose editors supporting UTF-8 (VS Code, Sublime Text, etc.)
+- Avoid editing JSON files with Windows Notepad
+- Select "UTF-8 without BOM" format when saving
 
 **Check Encoding**:
 ```bash
@@ -278,33 +278,33 @@ file -i project_data.json
 ```
 
 ### Fault Tolerance Mechanism
-**Principle**: When encountering file operation issues, should try multiple methods to resolve, rather than limiting to single approach.
+**Principle**: When encountering file operation problems, try multiple methods to resolve rather than limiting to a single approach.
 
-**Multiple Methods Comparison**:
+**Comparison of Multiple Methods**:
 
-| Method | Use Case | Pros | Cons |
-|--------|----------|------|------|
-| Bash commands | Simple file operations | Fast and direct | Easily limited by permissions |
-| Python os module | Cross-platform | Good compatibility | Code slightly complex |
-| Python json module | JSON files | Auto-validates format | Only applicable to JSON |
-| Manual editor | Need precise control | Flexible | Prone to introduce errors |
+| Method | Applicable Scenario | Advantages | Disadvantages |
+|--------|-------------------|------------|---------------|
+| Bash Commands | Simple file operations | Fast and direct | Easily restricted by permissions |
+| Python os Module | Cross-platform | Good compatibility | Code slightly complex |
+| Python json Module | JSON files | Automatically validates format | Only applicable to JSON |
+| Manual Editor | Need precise control | Flexible | Easy to introduce errors |
 
 **Recommended Practice**:
-- Prioritize using scripts to generate data, avoid manual editing
+- Prioritize script generation of data, avoid manual editing
 - When file operations fail, try using Python instead of bash
-- Keep scripts cross-platform compatible (Linux/macOS/Windows)
+- Maintain script cross-platform compatibility (Linux/macOS/Windows)
 
 ---
 
-## Common Error Codes Quick Reference
+## Common Error Code Quick Reference
 
-| Error Message | Possible Cause | Resolution |
-|---------------|----------------|------------|
+| Error Message | Possible Cause | Solution |
+|---------------|----------------|----------|
 | `Extra data` | JSON format error, invisible characters | Use Python to rewrite file |
 | `Expecting property name` | JSON syntax error (missing quotes) | Check JSON syntax |
-| `Invalid escape sequence` | Escape character error | Use Python to write, ensure correct escaping |
+| `Invalid escape sequence` | Escape character error | Use Python to write, ensure proper escaping |
 | `Permission denied` | Insufficient file permissions | Check and modify file permissions |
-| `FileNotFoundError` | File doesn't exist | Check if file path correct |
+| `FileNotFoundError` | File does not exist | Check if file path is correct |
 | `Module ID not found` | Module ID inconsistency | Unify module IDs in both files |
 
 ---
@@ -315,5 +315,5 @@ If encountering issues not listed in this document, please:
 
 1. Check detailed instructions in SKILL.md
 2. View script help information: `python scripts/generate_observability_data.py --help`
-3. Use validation scripts to check data consistency
-4. View log files (if any) for more error information
+3. Use verification script to check data consistency
+4. Check log files (if any) for more error information

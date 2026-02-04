@@ -78,6 +78,10 @@ if FLASK_AVAILABLE:
     def get_data():
         return jsonify(data_manager.get_all_data())
 
+    @app.route('/favicon.ico')
+    def favicon():
+        return '', 204
+
     @app.route('/api/update/module', methods=['POST'])
     def update_module_status():
         """更新模块状态和问题描述（仅交互模式）"""
@@ -163,17 +167,16 @@ def get_dashboard_html(mode='static'):
     """现代化 UI 模板 - 采用 Tailwind CSS 和 Lucid Icons (中文默认 & 语言切换)"""
     return """
 <!DOCTYPE html>
-<html lang="zh-CN" class="dark">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cox coding-透明流畅的交互体验</title>
+    <title>Cox coding - Transparent & Smooth Interactive Experience</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Plus Jakarta Sans', 'Noto Sans SC', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", "Microsoft YaHei", sans-serif;
             background-color: #09090b;
             color: #fafafa;
         }
@@ -411,7 +414,7 @@ def get_dashboard_html(mode='static'):
             }
         };
 
-        let currentLang = 'zh';
+        let currentLang = 'en';
 
         function setLanguage(lang) {
             currentLang = lang;
@@ -534,22 +537,25 @@ def get_dashboard_html(mode='static'):
                 document.getElementById('project-info').textContent = `${p.project_name} • v${a.version || '1.0'}`;
 
                 // 指标卡片
-                const totalTasks = p.iterations.reduce((sum, iter) => sum + iter.tasks.length, 0);
-                const passRate = test.test_suites.length ? (test.test_suites.reduce((s, x) => s + (x.passed_tests/x.total_tests), 0) / test.test_suites.length * 100).toFixed(0) : 0;
+                const totalTasks = p.iterations?.reduce((sum, iter) => sum + (iter.tasks?.length || 0), 0) || 0;
+                const passRate = (test.test_suites?.length) 
+                    ? ((test.test_suites.reduce((s, x) => s + (x.passed_tests/x.total_tests), 0) / test.test_suites.length) * 100).toFixed(0) 
+                    : 0;
                 const passRateDisplay = isNaN(parseFloat(passRate)) ? '暂未开放' : passRate + '%';
             
             document.getElementById('top-metrics').innerHTML = `
-                ${renderMetricCard(t.metricIterations, p.iterations.length, 'milestone', 'text-blue-400')}
+                ${renderMetricCard(t.metricIterations, p.iterations?.length || 0, 'milestone', 'text-blue-400')}
                 ${renderMetricCard(t.metricTasks, totalTasks, 'check-circle', 'text-emerald-400')}
                 ${renderMetricCard(t.metricPassRate, passRateDisplay, 'shield', 'text-amber-400')}
-                ${renderMetricCard(t.metricAnomalies, test.anomalies.length, 'zap', 'text-red-400')}
+                ${renderMetricCard(t.metricAnomalies, test.anomalies?.length || 0, 'zap', 'text-red-400')}
             `;
 
             // 迭代列表（按迭代分组显示任务）
-            document.getElementById('task-count').textContent = `${p.iterations.length} ${t.metricIterations}`;
-            document.getElementById('task-list').innerHTML = p.iterations.map(iter => {
-                const completedTasks = iter.tasks.filter(t => t.status === 'completed' || t.status === 'done').length;
-                const progress = iter.tasks.length > 0 ? (completedTasks / iter.tasks.length * 100).toFixed(0) : 0;
+            document.getElementById('task-count').textContent = `${p.iterations?.length || 0} ${t.metricIterations}`;
+            document.getElementById('task-list').innerHTML = (p.iterations || []).map(iter => {
+                const taskList = iter.tasks || [];
+                const completedTasks = taskList.filter(t => t.status === 'completed' || t.status === 'done').length;
+                const progress = taskList.length > 0 ? (completedTasks / taskList.length * 100).toFixed(0) : 0;
                 const isCurrent = iter.iteration_id === p.current_iteration;
                 const isCollapsed = !isCurrent && collapsedIterations.has(iter.iteration_id);
                 
@@ -577,7 +583,7 @@ def get_dashboard_html(mode='static'):
                             <div class="px-4 py-3 bg-zinc-900/20">
                                 <div class="flex items-center justify-between text-xs mb-1">
                                     <span class="text-zinc-400">任务进度</span>
-                                    <span class="text-zinc-300">${completedTasks}/${iter.tasks.length} 已完成 (${progress}%)</span>
+                                    <span class="text-zinc-300">${completedTasks}/${iter.tasks?.length || 0} 已完成 (${progress}%)</span>
                                 </div>
                                 <div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
                                     <div class="bg-gradient-to-r from-blue-500 to-emerald-500 h-full transition-all duration-500" style="width: ${progress}%"></div>
@@ -586,7 +592,7 @@ def get_dashboard_html(mode='static'):
                             
                             <!-- 任务列表 -->
                             <div class="p-4 space-y-2">
-                                ${iter.tasks.length > 0 ? iter.tasks.map(task => `
+                                ${(iter.tasks?.length || 0) > 0 ? iter.tasks.map(task => `
                                     <div class="flex items-center justify-between p-3 bg-zinc-900/40 rounded-lg border border-zinc-800/30 hover:border-zinc-700/50 transition-colors">
                                         <div class="flex items-center gap-3">
                                             <div class="w-1.5 h-6 rounded-full ${task.status === 'completed' || task.status === 'done' ? 'bg-emerald-500' : task.status === 'in_progress' ? 'bg-blue-500' : 'bg-zinc-600'}"></div>
@@ -608,14 +614,14 @@ def get_dashboard_html(mode='static'):
                         </div>
                         
                         <!-- 涉及的模块（折叠时也显示） -->
-                        ${iter.modules && iter.modules.length > 0 ? `
+                        ${(iter.modules && iter.modules.length > 0) ? `
                             <div class="px-4 py-3 border-t border-zinc-800/50">
                                 <div class="flex items-center gap-2 text-xs text-zinc-500 mb-2">
                                     <i data-lucide="layers" class="w-3 h-3"></i>
-                                    <span>涉及的模块 (${iter.modules.length})</span>
+                                    <span>涉及的模块 (${iter.modules?.length || 0})</span>
                                 </div>
                                 <div class="flex flex-wrap gap-2">
-                                    ${iter.modules.map(mod => `
+                                    ${(iter.modules || []).map(mod => `
                                         <div class="px-3 py-1.5 bg-zinc-900/60 rounded-lg border border-zinc-800/50">
                                             <p class="text-xs font-medium text-zinc-300">${mod.module_name}</p>
                                             <p class="text-[10px] text-zinc-500 mt-0.5">预期完成率: ${(mod.expected_completion * 100).toFixed(0)}%</p>
@@ -626,13 +632,13 @@ def get_dashboard_html(mode='static'):
                         ` : ''}
                         
                         <!-- 开发假设（折叠时也显示） -->
-                        ${iter.assumptions && iter.assumptions.length > 0 ? `
+                        ${(iter.assumptions?.length || 0) > 0 ? `
                             <div class="px-4 py-3 border-t border-zinc-800/50">
                                 <div class="flex items-center gap-2 text-xs text-zinc-500 mb-2">
                                     <i data-lucide="lightbulb" class="w-3 h-3"></i>
                                     <span>开发假设 (${iter.assumptions.length})</span>
                                 </div>
-                                ${iter.assumptions.slice(0, 2).map(assump => {
+                                ${(iter.assumptions || []).slice(0, 2).map(assump => {
                                     let status = assump.status;
                                     if (!status && assump.validated !== undefined) {
                                         status = assump.validated === true ? 'validated' : 'pending';
@@ -642,7 +648,7 @@ def get_dashboard_html(mode='static'):
                                         ${assump.hypothesis || assump.description || assump.assumption_text || '无描述'}
                                     </div>`;
                                 }).join('')}
-                                ${iter.assumptions.length > 2 ? `<p class="text-xs text-zinc-500">...还有 ${iter.assumptions.length - 2} 个假设</p>` : ''}
+                                ${(iter.assumptions?.length || 0) > 2 ? `<p class="text-xs text-zinc-500">...还有 ${(iter.assumptions?.length || 0) - 2} 个假设</p>` : ''}
                             </div>
                         ` : ''}
                     </div>
@@ -650,7 +656,7 @@ def get_dashboard_html(mode='static'):
             }).join('');
 
             // 模块成熟度（交互模式：只显示已宣称开发好的模块，支持状态更新）
-            const developedModules = a.modules.filter(m => 
+            const developedModules = (a.modules || []).filter(m => 
                 m.status === 'confirmed' || 
                 m.status === 'optimized' || 
                 m.status === 'has_issue'
@@ -682,7 +688,7 @@ def get_dashboard_html(mode='static'):
             `).join('');
 
             // 测试套件
-            document.getElementById('test-suites').innerHTML = test.test_suites.map(s => `
+            document.getElementById('test-suites').innerHTML = (test.test_suites || []).map(s => `
                 <div>
                     <div class="flex justify-between text-sm mb-2 font-semibold">
                         <span>${s.suite_name}</span>
@@ -697,7 +703,7 @@ def get_dashboard_html(mode='static'):
             `).join('');
 
             // 异常
-            document.getElementById('anomaly-list').innerHTML = test.anomalies.length
+            document.getElementById('anomaly-list').innerHTML = (test.anomalies?.length || 0)
                 ? test.anomalies.map(anom => `
                     <div class="p-3 bg-red-500/10 rounded-lg border border-red-500/20 text-xs">
                         <p class="font-bold text-red-400 mb-1 flex items-center justify-between">
@@ -724,7 +730,7 @@ def get_dashboard_html(mode='static'):
                 : `<p class="text-zinc-500 text-sm text-center py-4">${t.noAssumptions}</p>`;
 
             // 性能趋势
-            if (test.performance_history && test.performance_history.length > 0) {
+            if (test.performance_history?.length > 0) {
                 renderPerformanceChart(test.performance_history);
             } else {
                 document.getElementById('performance-chart').innerHTML = `<p class="text-zinc-500 text-sm text-center py-8">${t.noPerf}</p>`;
@@ -732,7 +738,7 @@ def get_dashboard_html(mode='static'):
 
             // 团队概览
             const teamStats = analyzeTeamData(p, a);
-            document.getElementById('team-list').innerHTML = Object.keys(teamStats).length
+            document.getElementById('team-list').innerHTML = (Object.keys(teamStats).length || 0)
                 ? Object.entries(teamStats).map(([member, stats]) => `
                     <div class="flex items-center justify-between p-3 bg-zinc-900/40 rounded-lg border border-zinc-800/50">
                         <div class="flex items-center gap-3">
@@ -778,7 +784,7 @@ def get_dashboard_html(mode='static'):
             }
             
             // 性能趋势板块：无 performance_history 数据时隐藏
-            const hasRealPerfData = test.performance_history && test.performance_history.length > 0;
+            const hasRealPerfData = test.performance_history?.length > 0;
             const perfSection = document.getElementById('performance-section');
             if(perfSection) {
                 if(!hasRealPerfData) {
@@ -1032,7 +1038,7 @@ def get_dashboard_html(mode='static'):
         }
 
         // 初始化
-        setLanguage('zh');
+        setLanguage('en');
         refreshData();
     </script>
 </body>
@@ -1044,11 +1050,11 @@ def get_static_html_template():
     """获取静态 HTML 模板（简化版，移除交互功能）"""
     return """
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cox 可观测性面板 - 静态模式</title>
+    <title>Cox Observability Panel - Static Mode</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
@@ -1163,6 +1169,9 @@ def get_static_html_template():
             'en': { 'high': 'High Risk', 'low': 'Low Risk' }
         };
         
+        // 静态模式固定使用英文，定义全局语言变量
+        let currentLang = 'en';
+        
         function getPriorityLabel(priority) {
             return priorityLabels[currentLang][priority] || priority;
         }
@@ -1210,17 +1219,18 @@ def get_static_html_template():
 
                 document.getElementById('project-info').textContent = `${p.project_name} • v${a.version || '1.0'}`;
 
-                const totalTasks = p.iterations.reduce((sum, iter) => sum + iter.tasks.length, 0);
+                const totalTasks = p.iterations?.reduce((sum, iter) => sum + (iter.tasks?.length || 0), 0) || 0;
                 document.getElementById('top-metrics').innerHTML = `
-                    ${renderMetricCard('迭代周期', p.iterations.length, 'milestone', 'text-blue-400')}
+                    ${renderMetricCard('迭代周期', p.iterations?.length || 0, 'milestone', 'text-blue-400')}
                     ${renderMetricCard('任务总数', totalTasks, 'check-circle', 'text-emerald-400')}
-                    ${renderMetricCard('系统异常', test.anomalies.length, 'zap', 'text-red-400')}
+                    ${renderMetricCard('系统异常', test.anomalies?.length || 0, 'zap', 'text-red-400')}
                 `;
 
-                document.getElementById('task-count').textContent = `${p.iterations.length} 迭代`;
-                document.getElementById('task-list').innerHTML = p.iterations.map(iter => {
-                    const completedTasks = iter.tasks.filter(t => t.status === 'completed' || t.status === 'done').length;
-                    const progress = iter.tasks.length > 0 ? (completedTasks / iter.tasks.length * 100).toFixed(0) : 0;
+                document.getElementById('task-count').textContent = `${p.iterations?.length || 0} 迭代`;
+                document.getElementById('task-list').innerHTML = (p.iterations || []).map(iter => {
+                    const taskList = iter.tasks || [];
+                    const completedTasks = taskList.filter(t => t.status === 'completed' || t.status === 'done').length;
+                    const progress = taskList.length > 0 ? (completedTasks / taskList.length * 100).toFixed(0) : 0;
                     const isCurrent = iter.iteration_id === p.current_iteration;
                     const isCollapsed = !isCurrent && collapsedIterations.has(iter.iteration_id);
                     
@@ -1243,14 +1253,14 @@ def get_static_html_template():
                                 <div class="px-4 py-3 bg-zinc-900/20">
                                     <div class="flex items-center justify-between text-xs mb-1">
                                         <span class="text-zinc-400">任务进度</span>
-                                        <span class="text-zinc-300">${completedTasks}/${iter.tasks.length} 已完成 (${progress}%)</span>
+                                        <span class="text-zinc-300">${completedTasks}/${taskList.length} 已完成 (${progress}%)</span>
                                     </div>
                                     <div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
                                         <div class="bg-gradient-to-r from-blue-500 to-emerald-500 h-full transition-all duration-500" style="width: ${progress}%"></div>
                                     </div>
                                 </div>
                                 <div class="p-4 space-y-2">
-                                    ${iter.tasks.length > 0 ? iter.tasks.map(task => `
+                                    ${taskList.length > 0 ? taskList.map(task => `
                                         <div class="flex items-center justify-between p-3 bg-zinc-900/40 rounded-lg border border-zinc-800/30">
                                             <div class="flex items-center gap-3">
                                                 <div class="w-1.5 h-6 rounded-full ${task.status === 'completed' || task.status === 'done' ? 'bg-emerald-500' : task.status === 'in_progress' ? 'bg-blue-500' : 'bg-zinc-600'}"></div>
@@ -1269,13 +1279,13 @@ def get_static_html_template():
                                     `).join('') : '<p class="text-sm text-zinc-500 text-center py-4">尚未详细计划</p>'}
                                 </div>
                             </div>
-                            ${iter.assumptions && iter.assumptions.length > 0 ? `
+                            ${(iter.assumptions?.length || 0) > 0 ? `
                                 <div class="px-4 py-3 border-t border-zinc-800/50">
                                     <div class="flex items-center gap-2 text-xs text-zinc-500 mb-2">
                                         <i data-lucide="lightbulb" class="w-3 h-3"></i>
                                         <span>开发假设 (${iter.assumptions.length})</span>
                                     </div>
-                                    ${iter.assumptions.slice(0, 2).map(assump => {
+                                    ${(iter.assumptions || []).slice(0, 2).map(assump => {
                                         let status = assump.status;
                                         if (!status && assump.validated !== undefined) {
                                             status = assump.validated === true ? 'validated' : 'pending';
@@ -1285,7 +1295,7 @@ def get_static_html_template():
                                             ${assump.hypothesis || assump.description || assump.assumption_text || '无描述'}
                                         </div>`;
                                     }).join('')}
-                                    ${iter.assumptions.length > 2 ? `<p class="text-xs text-zinc-500">...还有 ${iter.assumptions.length - 2} 个假设</p>` : ''}
+                                    ${(iter.assumptions?.length || 0) > 2 ? `<p class="text-xs text-zinc-500">...还有 ${(iter.assumptions?.length || 0) - 2} 个假设</p>` : ''}
                                 </div>
                             ` : ''}
                         </div>
@@ -1315,8 +1325,8 @@ def get_static_html_template():
                     </div>
                 `).join('') || '<p class="text-sm text-zinc-500 text-center py-4">暂无已开发的模块</p>';
 
-                const allAssumptions = p.iterations.flatMap(i => i.assumptions || []);
-                document.getElementById('assumptions-list').innerHTML = allAssumptions.length
+                const allAssumptions = (p.iterations || []).flatMap(i => i.assumptions || []);
+                document.getElementById('assumptions-list').innerHTML = (allAssumptions?.length || 0)
                     ? allAssumptions.map(assump => `
                         <div class="p-3 bg-zinc-900/40 rounded-lg border border-zinc-800/50">
                             <p class="text-sm font-semibold text-zinc-200 mb-2">${assump.hypothesis || assump.description || assump.assumption_text || '无描述'}</p>
@@ -1328,7 +1338,7 @@ def get_static_html_template():
                     `).join('')
                     : '<p class="text-zinc-500 text-sm text-center py-4">暂无跟踪的假设</p>';
 
-                document.getElementById('anomaly-list').innerHTML = test.anomalies.length
+                document.getElementById('anomaly-list').innerHTML = (test.anomalies?.length || 0)
                     ? test.anomalies.map(anom => `
                         <div class="p-3 bg-red-500/10 rounded-lg border border-red-500/20 text-xs">
                             <p class="font-bold text-red-400 mb-1">${anom.type}</p>

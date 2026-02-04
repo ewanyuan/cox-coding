@@ -1,0 +1,360 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cox Observability Panel - Static Mode</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #09090b 0%, #18181b 50%, #09090b 100%);
+            min-height: 100vh;
+        }
+        .glass-card {
+            background: rgba(39, 39, 42, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(63, 63, 70, 0.3);
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="text-zinc-100 antialiased p-4 lg:p-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="mb-8 flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent" id="app-title">Cox 可观测性面板</h1>
+                <p class="text-sm text-zinc-500 mt-1" id="project-info">正在加载...</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="px-4 py-2 bg-zinc-900/80 rounded-lg border border-zinc-800">
+                    <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">最后更新</p>
+                    <p class="text-sm font-mono text-emerald-400" id="last-updated">--:--:--</p>
+                </div>
+                <button onclick="refreshData()" class="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg font-semibold hover:bg-zinc-200 transition-colors">
+                    <i data-lucide="refresh-cw" class="w-4 h-4" id="refresh-icon"></i>
+                    <span>刷新</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Top Metrics -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10" id="top-metrics"></div>
+
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Left Column -->
+            <div class="lg:col-span-8 space-y-6">
+                <div class="glass-card rounded-2xl p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-lg font-bold flex items-center gap-2">
+                            <i data-lucide="git-merge" class="text-blue-400"></i> 迭代管理
+                        </h2>
+                        <span class="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded" id="task-count">0 迭代</span>
+                    </div>
+                    <div class="space-y-3" id="task-list"></div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-6">
+                    <h2 class="text-lg font-bold flex items-center gap-2 mb-6">
+                        <i data-lucide="layers" class="text-emerald-400"></i> 模块成熟度
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="module-grid"></div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="lg:col-span-4 space-y-6">
+                <div class="glass-card rounded-2xl p-6">
+                    <h2 class="text-lg font-bold flex items-center gap-2 mb-6">
+                        <i data-lucide="lightbulb" class="text-yellow-400"></i> 假设验证
+                    </h2>
+                    <div class="space-y-3" id="assumptions-list"></div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-6 bg-red-500/5 border-red-500/20">
+                    <h2 class="text-lg font-bold flex items-center gap-2 mb-4 text-red-400">
+                        <i data-lucide="alert-triangle"></i> 活跃异常
+                    </h2>
+                    <div class="space-y-3" id="anomaly-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const statusConfig = {
+            'completed': { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: '已完成' },
+            'done': { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: '已完成' },
+            'in_progress': { bg: 'bg-blue-500/10', text: 'text-blue-400', label: '进行中' },
+            'todo': { bg: 'bg-zinc-800', text: 'text-zinc-400', label: '待处理' },
+            'not_started': { bg: 'bg-zinc-800', text: 'text-zinc-400', label: '未开始' },
+            'delayed': { bg: 'bg-red-500/10', text: 'text-red-400', label: '延期' },
+            'critical': { bg: 'bg-red-500', text: 'text-white', label: '紧急' },
+            'validated': { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: '已验证' },
+            'invalidated': { bg: 'bg-red-500/10', text: 'text-red-400', label: '已失效' },
+            'pending': { bg: 'bg-yellow-500/10', text: 'text-yellow-400', label: '待定' },
+            'confirmed': { bg: 'bg-blue-500/10', text: 'text-blue-400', label: '待确认' },
+            'optimized': { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: '完美' },
+            'has_issue': { bg: 'bg-red-500/10', text: 'text-red-400', label: '有问题' }
+        };
+
+        // Priority 和 Risk Level 翻译配置
+        const priorityLabels = {
+            'zh': { 'critical': '紧急', 'high': '高', 'medium': '中', 'low': '低' },
+            'en': { 'critical': 'Critical', 'high': 'High', 'medium': 'Medium', 'low': 'Low' }
+        };
+        
+        const riskLabels = {
+            'zh': { 'high': '大风险', 'low': '小风险' },
+            'en': { 'high': 'High Risk', 'low': 'Low Risk' }
+        };
+        
+        // 静态模式固定使用英文，定义全局语言变量
+        let currentLang = 'en';
+        
+        function getPriorityLabel(priority) {
+            return priorityLabels[currentLang][priority] || priority;
+        }
+        
+        function getRiskLabel(risk) {
+            return riskLabels[currentLang][risk] || risk;
+        }
+
+                function getStatusBadge(status) {
+            const key = status ? status.toLowerCase() : 'pending';
+            const cfg = statusConfig[key] || { bg: 'bg-zinc-800', text: 'text-zinc-400', label: status || '未知' };
+            return `<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${cfg.bg} ${cfg.text}">${cfg.label}</span>`;
+        }
+
+        let collapsedIterations = new Set();
+
+        function toggleIteration(iterationId) {
+            if (collapsedIterations.has(iterationId)) {
+                collapsedIterations.delete(iterationId);
+            } else {
+                collapsedIterations.add(iterationId);
+            }
+            if(window.lastData) renderUI(window.lastData);
+        }
+
+        async function refreshData() {
+            const btnIcon = document.getElementById('refresh-icon');
+            if(btnIcon) btnIcon.classList.add('animate-spin');
+            try {
+                if(window.lastData) renderUI(window.lastData);
+            } catch (e) {
+                console.error("Refresh failed", e);
+            } finally {
+                if(btnIcon) setTimeout(() => btnIcon.classList.remove('animate-spin'), 600);
+            }
+        }
+
+        function renderUI(data) {
+            try {
+                const t = translations;
+                document.getElementById('last-updated').textContent = data.last_updated;
+                const p = data.project;
+                const a = data.app;
+                const test = data.test;
+
+                document.getElementById('project-info').textContent = `${p.project_name} • v${a.version || '1.0'}`;
+
+                const totalTasks = p.iterations?.reduce((sum, iter) => sum + (iter.tasks?.length || 0), 0) || 0;
+                document.getElementById('top-metrics').innerHTML = `
+                    ${renderMetricCard('迭代周期', p.iterations?.length || 0, 'milestone', 'text-blue-400')}
+                    ${renderMetricCard('任务总数', totalTasks, 'check-circle', 'text-emerald-400')}
+                    ${renderMetricCard('系统异常', test.anomalies?.length || 0, 'zap', 'text-red-400')}
+                `;
+
+                document.getElementById('task-count').textContent = `${p.iterations?.length || 0} 迭代`;
+                document.getElementById('task-list').innerHTML = (p.iterations || []).map(iter => {
+                    const taskList = iter.tasks || [];
+                    const completedTasks = taskList.filter(t => t.status === 'completed' || t.status === 'done').length;
+                    const progress = taskList.length > 0 ? (completedTasks / taskList.length * 100).toFixed(0) : 0;
+                    const isCurrent = iter.iteration_id === p.current_iteration;
+                    const isCollapsed = !isCurrent && collapsedIterations.has(iter.iteration_id);
+                    
+                    return `
+                        <div class="bg-zinc-900/40 rounded-xl border ${isCurrent ? 'border-blue-500/30 bg-blue-500/5' : 'border-zinc-800/50'} overflow-hidden">
+                            <div class="p-4 border-b border-zinc-800/50 cursor-pointer hover:bg-zinc-800/30 transition-colors" onclick="toggleIteration('${iter.iteration_id}')">
+                                <div class="flex items-center justify-between mb-2">
+                                    <div class="flex items-center gap-3">
+                                        ${isCurrent ? '<span class="text-xs bg-blue-500 text-white px-2 py-0.5 rounded font-medium">当前</span>' : ''}
+                                        <i data-lucide="${isCollapsed ? 'chevron-right' : 'chevron-down'}" class="w-4 h-4 text-zinc-500 transition-transform"></i>
+                                        <h3 class="font-bold text-base text-zinc-200">${iter.iteration_name}</h3>
+                                    </div>
+                                    ${getStatusBadge(iter.status)}
+                                </div>
+                                <div class="flex items-center gap-4 text-xs text-zinc-500">
+                                    <span><i data-lucide="calendar" class="w-3 h-3 inline mr-1"></i>${iter.start_date || '-'} ~ ${iter.end_date || '-'}</span>
+                                </div>
+                            </div>
+                            <div class="${isCollapsed ? 'hidden' : ''}">
+                                <div class="px-4 py-3 bg-zinc-900/20">
+                                    <div class="flex items-center justify-between text-xs mb-1">
+                                        <span class="text-zinc-400">任务进度</span>
+                                        <span class="text-zinc-300">${completedTasks}/${taskList.length} 已完成 (${progress}%)</span>
+                                    </div>
+                                    <div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                                        <div class="bg-gradient-to-r from-blue-500 to-emerald-500 h-full transition-all duration-500" style="width: ${progress}%"></div>
+                                    </div>
+                                </div>
+                                <div class="p-4 space-y-2">
+                                    ${taskList.length > 0 ? taskList.map(task => `
+                                        <div class="flex items-center justify-between p-3 bg-zinc-900/40 rounded-lg border border-zinc-800/30">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-1.5 h-6 rounded-full ${task.status === 'completed' || task.status === 'done' ? 'bg-emerald-500' : task.status === 'in_progress' ? 'bg-blue-500' : 'bg-zinc-600'}"></div>
+                                                <div>
+                                                    <p class="font-medium text-sm text-zinc-200">${task.task_name}</p>
+                                                    <div class="flex items-center gap-3 mt-1 text-xs text-zinc-500">
+                                                        <span>${task.task_id}</span>
+                                                        ${task.assignee ? `<span><i data-lucide="user" class="w-3 h-3 inline mr-1"></i>${task.assignee}</span>` : ''}
+                                                        ${task.priority ? `<span class="px-1.5 py-0.5 rounded ${task.priority === 'high' || task.priority === 'critical' ? 'bg-red-500/10 text-red-400' : 'bg-zinc-700/50 text-zinc-400'}">${getPriorityLabel(task.priority)}</span>` : ''}
+                                                        ${task.risk_level ? `<span class="px-1.5 py-0.5 rounded ${task.risk_level === 'high' ? 'bg-orange-500/10 text-orange-400' : 'bg-emerald-500/10 text-emerald-400'}">${task.risk_level}</span>` : ''}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            ${getStatusBadge(task.status)}
+                                        </div>
+                                    `).join('') : '<p class="text-sm text-zinc-500 text-center py-4">尚未详细计划</p>'}
+                                </div>
+                            </div>
+                            ${(iter.assumptions?.length || 0) > 0 ? `
+                                <div class="px-4 py-3 border-t border-zinc-800/50">
+                                    <div class="flex items-center gap-2 text-xs text-zinc-500 mb-2">
+                                        <i data-lucide="lightbulb" class="w-3 h-3"></i>
+                                        <span>开发假设 (${iter.assumptions.length})</span>
+                                    </div>
+                                    ${(iter.assumptions || []).slice(0, 2).map(assump => {
+                                        let status = assump.status;
+                                        if (!status && assump.validated !== undefined) {
+                                            status = assump.validated === true ? 'validated' : 'pending';
+                                        }
+                                        return `<div class="text-xs text-zinc-400 mb-1">
+                                            <span class="${status === 'validated' ? 'text-emerald-400' : status === 'invalidated' ? 'text-red-400' : 'text-amber-400'}">●</span>
+                                            ${assump.hypothesis || assump.description || assump.assumption_text || '无描述'}
+                                        </div>`;
+                                    }).join('')}
+                                    ${(iter.assumptions?.length || 0) > 2 ? `<p class="text-xs text-zinc-500">...还有 ${(iter.assumptions?.length || 0) - 2} 个假设</p>` : ''}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }).join('');
+
+                const developedModules = a.modules.filter(m => 
+                    m.status === 'confirmed' || 
+                    m.status === 'optimized' || 
+                    m.status === 'has_issue'
+                );
+                document.getElementById('module-grid').innerHTML = developedModules.map(m => `
+                    <div class="p-4 bg-zinc-900/40 rounded-xl border border-zinc-800/50">
+                        <div class="flex justify-between items-start mb-3">
+                            <p class="font-bold text-sm text-zinc-200">${m.module_name}</p>
+                            ${getStatusBadge(m.status)}
+                        </div>
+                        <div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                            <div class="bg-blue-500 h-full" style="width: ${(m.completion_rate || 0)*100}%"></div>
+                        </div>
+                        <p class="text-[10px] text-zinc-500 mt-2 font-mono uppercase">${((m.completion_rate || 0)*100).toFixed(0)}% 完成</p>
+                        ${m.status === 'has_issue' && m.issue_description ? `
+                            <div class="mt-3 p-2 bg-red-500/10 rounded-lg border border-red-500/20">
+                                <p class="text-xs text-red-400">问题描述：${m.issue_description}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('') || '<p class="text-sm text-zinc-500 text-center py-4">暂无已开发的模块</p>';
+
+                const allAssumptions = (p.iterations || []).flatMap(i => i.assumptions || []);
+                document.getElementById('assumptions-list').innerHTML = (allAssumptions?.length || 0)
+                    ? allAssumptions.map(assump => `
+                        <div class="p-3 bg-zinc-900/40 rounded-lg border border-zinc-800/50">
+                            <p class="text-sm font-semibold text-zinc-200 mb-2">${assump.hypothesis || assump.description || assump.assumption_text || '无描述'}</p>
+                            <div class="flex items-center justify-between">
+                                ${getStatusBadge(assump.status)}
+                                ${assump.validation_date ? `<span class="text-[10px] text-zinc-500">${assump.validation_date}</span>` : ''}
+                            </div>
+                        </div>
+                    `).join('')
+                    : '<p class="text-zinc-500 text-sm text-center py-4">暂无跟踪的假设</p>';
+
+                document.getElementById('anomaly-list').innerHTML = (test.anomalies?.length || 0)
+                    ? test.anomalies.map(anom => `
+                        <div class="p-3 bg-red-500/10 rounded-lg border border-red-500/20 text-xs">
+                            <p class="font-bold text-red-400 mb-1">${anom.type}</p>
+                            <p class="text-zinc-400 line-clamp-1">${anom.description}</p>
+                        </div>
+                    `).join('')
+                    : '<p class="text-zinc-500 text-sm text-center py-4">系统状态良好</p>';
+
+                lucide.createIcons();
+            } catch (e) {
+                console.error("Render failed:", e);
+                console.error("Data:", data);
+            }
+        }
+
+        function renderMetricCard(label, value, icon, iconColor) {
+            return `
+                <div class="glass-card rounded-2xl p-5 flex items-center gap-5">
+                    <div class="p-3 bg-zinc-900 rounded-xl">
+                        <i data-lucide="${icon}" class="w-6 h-6 ${iconColor}"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-bold mb-1">${label}</p>
+                        <p class="text-2xl font-bold text-white">${value}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        const translations = {
+            appTitle: 'Cox 可观测性面板',
+            lastUpdate: '最后更新',
+            refresh: '刷新'
+        };
+
+        // 静态模式固定中文，不需要 setLanguage 函数
+        
+    // 静态模式：数据已内联到 HTML 中
+    const staticData = {
+        project: {"project_name": "Test Project", "current_iteration": "ITER-001", "iterations": [{"iteration_id": "ITER-001", "iteration_name": "First Iteration", "start_date": "2026-02-01", "end_date": "2026-02-15", "status": "in_progress", "modules": [], "tasks": [{"task_id": "TASK-001", "task_name": "Task 1", "status": "todo", "priority": "high"}, {"task_id": "TASK-002", "task_name": "Task 2", "status": "in_progress", "priority": "medium"}], "assumptions": []}, {"iteration_id": "ITER-002", "iteration_name": "Second Iteration", "start_date": "2026-02-16", "end_date": "2026-03-01", "status": "todo", "modules": [], "tasks": [], "assumptions": []}], "last_updated": "2026-02-04 08:00:00"},
+        app: {"app_name": "Test App", "version": "1.0.0", "modules": [{"module_id": "MOD-001", "module_name": "Module 1", "status": "confirmed", "completion_rate": 1.0, "issue_description": ""}], "last_updated": "2026-02-04 08:00:00"},
+        test: {"test_suites": [], "anomalies": [], "performance_history": [], "last_updated": "2026-02-04 08:00:00"},
+        last_updated: new Date().toLocaleTimeString('zh-CN', {hour: '2-digit', minute: '2-digit', second: '2-digit'})
+    };
+    
+    // 刷新数据（静态模式直接使用内联数据，不支持实时刷新）
+    async function refreshData() {
+        const btnIcon = document.getElementById('refresh-icon');
+        if(btnIcon) btnIcon.classList.add('animate-spin');
+        
+        try {
+            // 静态模式：使用内联数据
+            window.lastData = staticData;
+            renderUI(staticData);
+        } catch (e) {
+            console.error("Render failed", e);
+        } finally {
+            if(btnIcon) setTimeout(() => btnIcon.classList.remove('animate-spin'), 600);
+        }
+    }
+    
+    // 禁用自动刷新（静态模式无法实时更新数据）
+    // setInterval(refreshData, 30000);
+    
+        refreshData();
+    </script>
+</body>
+</html>
+    

@@ -1,44 +1,36 @@
-# Deployment Solution Detailed Instructions
+# Deployment Solution Details
 
 This document provides detailed configuration and usage instructions for three deployment solutions.
 
 ## Table of Contents
-- [Simple Solution](#simple-solution-recommended-for-beginners)
-- [Intermediate Solution](#intermediate-solution-recommended-for-small-teams)
-- [Comprehensive Solution](#comprehensive-solution-not-currently-available)
+- [Static Web Solution](#static-web-solution)
+- [Interactive Web Solution](#interactive-web-solution-recommended)
+- [Comprehensive Solution](#comprehensive-solution-not-available-yet)
 
 ---
 
-## Simple Solution (Recommended for Beginners)
+## Static Web Solution
 
-### Characteristics
-- Generates structured logs only, no interface
-- Zero dependencies, zero configuration, ready to use
+- **Features**: Generates static HTML files, data embedded in HTML, no additional JSON files required
+- **Applicable Scenarios**: Restricted environments (such as online sandbox environments), quick requirement validation
+- **Usage Threshold**: No additional dependencies required (no need to install Flask)
+- **Usage Method**: Call `scripts/run_web_observability.py --mode static`, generates `observability.html` file
+- **Refresh Method**: Click refresh button to re-render data (static mode does not support auto-refresh)
 
-### Use Cases
-- Individual development
-- Quick requirement validation
-- No visualization needed
+### Calling skill-manager after deployment
 
-### Usage
-```bash
-python scripts/generate_observability_log.py --project project_data.json --app app_status.json --test test_metrics.json
-```
-
-### Invoke skill-manager After Deployment
-
-**Method 1: Use Helper Script (Recommended)**
+**Method One: Using auxiliary script (recommended)**
 ```bash
 python scripts/store_to_skill_manager.py deploy \
-  --mode simple \
+  --mode static \
   --config '{
-    "output_path": "/workspace/projects/cox/output.log",
-    "access_method": "cat /workspace/projects/cox/output.log",
+    "output_path": "/workspace/projects/cox/observability.html",
+    "access_method": "Open generated observability.html file",
     "manual_path": "/workspace/projects/cox/SKILL.md"
   }'
 ```
 
-**Method 2: Directly Invoke skill-manager API**
+**Method Two: Directly calling skill-manager API**
 ```python
 import sys
 sys.path.insert(0, '/workspace/projects/skill-manager/scripts')
@@ -47,16 +39,16 @@ from skill_manager import SkillStorage
 storage = SkillStorage(data_path="/workspace/projects/skill-data.json")
 
 skill_config = {
-    "deploy_mode": "simple",
-    "output_path": "/workspace/projects/cox/output.log",
-    "access_method": "cat /workspace/projects/cox/output.log",
+    "deploy_mode": "static",
+    "output_path": "/workspace/projects/cox/observability.html",
+    "access_method": "Open generated observability.html file",
     "manual_path": "/workspace/projects/cox/SKILL.md"
 }
 
 execution_logs = [{
     "time": "2024-01-22 12:00:00",
     "level": "INFO",
-    "message": "Simple solution deployment complete, log file: /workspace/projects/cox/output.log"
+    "message": "Static web solution deployed successfully, HTML file: /workspace/projects/cox/observability.html"
 }]
 
 storage.save("cox", config=skill_config, logs=execution_logs)
@@ -64,36 +56,27 @@ storage.save("cox", config=skill_config, logs=execution_logs)
 
 ---
 
-## Intermediate Solution (Recommended for Small Teams)
+## Interactive Web Solution (Recommended)
 
-### Characteristics
-- Provides local Web interface displaying observability data
-- Lightweight, easy to deploy, real-time refresh
+- **Features**: Provides local web interface, supports real-time data refresh (every 30 seconds), supports interaction
+- **Applicable Scenarios**: Real-time monitoring required
+- **Usage Threshold**: Requires Flask installation (`pip install flask`)
+- **Usage Method**: Call `scripts/run_web_observability.py --mode web`, access http://localhost:5000
 
-### Use Cases
-- 5-10 person team development
-- Need visualization interface
+### Calling skill-manager after deployment
 
-### Usage
-```bash
-python scripts/run_web_observability.py --project project_data.json --app app_status.json --test test_metrics.json
-# Visit http://localhost:5000 to view interface
-```
-
-### Invoke skill-manager After Deployment
-
-**Method 1: Use Helper Script (Recommended)**
+**Method One: Using auxiliary script (recommended)**
 ```bash
 python scripts/store_to_skill_manager.py deploy \
   --mode web \
   --config '{
     "url": "http://localhost:5000",
-    "access_method": "Browser access http://localhost:5000",
+    "access_method": "Access http://localhost:5000 via browser",
     "manual_path": "/workspace/projects/cox/SKILL.md"
   }'
 ```
 
-**Method 2: Directly Invoke skill-manager API**
+**Method Two: Directly calling skill-manager API**
 ```python
 import sys
 sys.path.insert(0, '/workspace/projects/skill-manager/scripts')
@@ -104,34 +87,24 @@ storage = SkillStorage(data_path="/workspace/projects/skill-data.json")
 skill_config = {
     "deploy_mode": "web",
     "url": "http://localhost:5000",
-    "access_method": "Browser access http://localhost:5000",
+    "access_method": "Access http://localhost:5000 via browser",
     "manual_path": "/workspace/projects/cox/SKILL.md"
 }
 
 execution_logs = [{
     "time": "2024-01-22 12:00:00",
     "level": "INFO",
-    "message": "Intermediate solution deployment complete, access URL: http://localhost:5000"
+    "message": "Interactive web solution deployed successfully, access address: http://localhost:5000"
 }]
 
 storage.save("cox", config=skill_config, logs=execution_logs)
 ```
 
-### Important Note
-Intermediate solution also generates `observability.log` log file, format consistent with simple solution, facilitating access by other skills.
 
 ---
 
-## Comprehensive Solution (Not Currently Available)
+## Comprehensive Solution (Not Available Yet)
 
-### Characteristics
-- Use Prometheus+Grafana professional observability tools
-- Docker deployment
-- Standard technology stack, scalable, production-ready
-
-### Use Cases
-- Preparing to migrate to production environment
-- Need professional monitoring capabilities
-
-### Status
-Not yet available, pending data integration and configuration solution completion.
+- Features: Professional observability tools using Prometheus + Grafana, Docker deployment
+- Applicable Scenarios: Preparing to migrate to production environment, requiring professional monitoring capabilities
+- Status: Not open yet, will be launched after improving data integration and configuration schemes.

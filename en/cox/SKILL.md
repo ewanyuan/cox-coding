@@ -1,87 +1,87 @@
 ---
 name: cox
 version: v1.0.0
-description: Cox Programming - Safeguarding your AI programming experience. Helps development teams manage project progress, identify development risks, and understand system health. Provides project progress tracking, iteration management (MVP-driven), task status management, development hypothesis recording, application module monitoring, test instrumentation and anomaly analysis. Supports both static webpage and interactive webpage solutions for different environments and team sizes. Web pages display grouped by iteration, clearly presenting each iteration's progress and tasks.
+description: Cox Programming - Safeguarding your AI programming experience. Helps development teams grasp project progress, identify development risks, and understand system health status. Provides project progress tracking, iteration management (MVP-driven), task status management, development assumption recording, application module monitoring, test tracing points, and anomaly analysis functions. Supports both static web and interactive web solutions, suitable for different environments and team sizes. Web pages are grouped by iteration, clearly presenting the progress and tasks of each iteration.
 dependency:
   python:
-    - flask>=2.0.0  # Only required for interactive webpage solution
+    - flask>=2.0.0  # Only required for interactive web solution
   system: []
 ---
 
-# Cox Programming - Safeguarding Your AI Programming Experience
+# COX Programming - Safeguarding your AI programming experience
 
 ## Task Objectives
-- **Cox's Role**: Cox is an **AI Programming Navigator**, responsible for project management and observability, not directly writing code or implementing features
-- **Collaboration Mode**: Cox works in conjunction with development skills
-  - Cox: Responsible for project planning, iteration management, progress tracking, issue tracking
-  - Development skills (such as cox-coding): Responsible for specific feature implementation and code writing
+- **COX's Role**: COX is an **AI Programming Navigator**, responsible for project management and observability, not directly writing code or implementing functions
+- **Collaboration Mode**: COX collaborates with development skills
+  - COX: Responsible for project planning, iteration management, progress tracking, issue tracking
+  - Development Skills (e.g., cox-coding): Responsible for specific function implementation and code writing
 - Capabilities include:
-  1. Project Dimension: Track iteration progress, task status, development hypotheses
-  2. Application Dimension: Monitor application feature module status
-  3. Test Dimension: Manage test instrumentation points, analyze anomalies
+  1. Project dimension: Track iteration progress, task status, development assumptions
+  2. Application dimension: Monitor application function module status
+  3. Test dimension: Manage test tracing points, analyze anomalies
 
 ## Trigger Conditions
 
-Cox is triggered under any of the following conditions:
+COX will be triggered in any of the following situations:
 
 ### Software Development Support (Core Scenario)
-When users propose software development requirements, Cox should **proactively enable** project management and iteration management processes:
-- **User Expression**: "Build a blog", "Develop a calculator", "Implement XX feature", "Build an e-commerce system"
+When users propose software development requirements, COX should **actively enable** project management and iteration management processes:
+- **User Expression**: "Make a blog", "Develop a calculator", "Implement XX function", "Make an e-commerce system"
 - **Collaboration Process**:
-  1. Cox understands requirements, plans project structure and iterations
-  2. Cox generates observability data (project progress, task lists, module planning)
-  3. Cox passes planning to development skills (such as cox-coding) for specific implementation
-  4. Cox continuously tracks progress, updates observability data
+  1. COX understands requirements, plans project structure and iterations
+  2. COX generates observability data (project progress, task list, module planning)
+  3. COX passes planning to development skills (e.g., cox-coding) for specific implementation
+  4. COX continuously tracks progress, updates observability data
 
-**Example Dialogue**:
+**Sample Dialogue**:
 ```
-User: Build a calculator using Cox skill
-Cox: Understood, I'll help plan the calculator project development. Let me first create project observability data...
-[Invoke scripts to generate data, plan iterations and tasks]
-Cox: Project planning complete, includes the following modules:
-- Number Input & Display
-- Basic Calculations
-- Clear & Backspace
+User: HI COX, make a calculator
+COX: Okay, I'll help you plan the calculator project development. Let me first create project observability data...
+[Call script to generate data, plan iterations and tasks]
+COX: Project planning completed, including the following modules:
+- UI Interface Module
+- Calculation Logic Module
+- History Record Module
 
-Now I'll break down iteration tasks, then request development skills to implement specific features.
+Now I'll break down iteration tasks, then ask development skills to implement specific functions.
 ```
 
 ### Project Progress
-- "Want to know project progress", "iteration completion percentage"
-- "View task status", "which tasks completed", "what's still pending"
+- "Want to know how project progress is going", "What's the iteration completion rate?"
+- "Check task status", "Which tasks are completed", "What's left to do"
 
 ### Issue Tracking
-- "How to track frequent bugs", "handle recurring issues", "need to record unresolved problems"
-- "Any anomalies needing attention"
+- "How to track frequent bugs", "How to handle recurring issues", "Need to record issues to resolve"
+- "Are there any anomalies that need attention"
 
 ### Quality Assurance
-- "Need to monitor API performance", "discover system anomalies", "test coverage status"
-- "API response slow", "system has anomalies"
+- "Need to monitor API performance", "How to discover system anomalies", "How's test coverage"
+- "API response time slow", "System has anomalies"
 
 ### Team Collaboration
-- "Need to share project information", "let team understand status", "need visualization dashboard"
+- "Need to share project information", "Let team members understand current status", "Need visual dashboard"
 
 ## Deployment Solution Selection
 
-Before starting use, select a deployment solution based on team requirements. See [references/deployment_details.md](references/deployment_details.md) for detailed configuration instructions.
+Before starting, please select a deployment solution based on team needs. Detailed configuration instructions are in [references/deployment_details.md](references/deployment_details.md).
 
-### Static Webpage Solution
-- **Characteristics**: Generates static HTML files, data inlined in HTML, no separate JSON files needed
-- **Use Cases**: Restricted environments (such as online sandbox environments), quick requirement validation
-- **Usage Barrier**: No additional dependencies required (no Flask installation needed)
-- **Usage**: Invoke `scripts/run_web_observability.py --mode static`, generates `observability.html` file
+### Interactive Web Solution (Recommended)
+- **Features**: Provides local Web interface, supports real-time data refresh (every 30 seconds), supports interaction
+- **Applicable Scenarios**: Real-time monitoring required
+- **Usage Threshold**: Requires Flask installation (`pip install flask`)
+- **Usage Method**: Call `scripts/run_web_observability.py --mode web`, access http://localhost:5000
+
+### Static Web Solution
+- **Features**: Generates static HTML files, data embedded in HTML, no additional JSON files required
+- **Applicable Scenarios**: Restricted environments (such as online sandbox environments), quick requirement validation
+- **Usage Threshold**: No additional dependencies required (no need to install Flask)
+- **Usage Method**: Call `scripts/run_web_observability.py --mode static`, generates `observability.html` file
 - **Refresh Method**: Click refresh button to re-render data (static mode doesn't support auto-refresh)
 
-### Interactive Webpage Solution (Recommended)
-- **Characteristics**: Provides local Web interface, supports real-time data refresh (every 30 seconds), supports interaction
-- **Use Cases**: Need real-time monitoring
-- **Usage Barrier**: Requires Flask installation (`pip install flask`)
-- **Usage**: Invoke `scripts/run_web_observability.py --mode web`, visit http://localhost:5000
-
-### Comprehensive Solution (Not Currently Available)
-- Characteristics: Use Prometheus+Grafana professional observability tools, Docker deployment
-- Use Cases: Preparing to migrate to production environment, need professional monitoring capabilities
-- Status: Not yet available, pending data integration and configuration solution completion
+### Comprehensive Solution (Not Available Yet)
+- Features: Professional observability tools using Prometheus + Grafana, Docker deployment
+- Applicable Scenarios: Preparing to migrate to production environment, requiring professional monitoring capabilities
+- Status: Not open yet, will be launched after improving data integration and configuration schemes
 
 ## Quick Start
 
@@ -89,100 +89,85 @@ Before starting use, select a deployment solution based on team requirements. Se
 
 **Recommended Method: Use Script to Generate Data**
 
-To ensure data format is 100% compliant, it's recommended to use the data generation script:
+To ensure data format 100% complies with specification, recommend using data generation script:
 
 ```bash
 # Method 1: Generate minimal dataset (quick experience)
 python scripts/generate_observability_data.py \
   --mode minimal \
   --project-name "My Project" \
-  --app-name "My App"
+  --app-name "My Application"
 
 # Method 2: Generate custom modules (recommended)
-# Agent should break down tasks based on actual requirements, not use example tasks
+# Agent should decompose tasks based on actual requirements, not use sample tasks
 python scripts/generate_observability_data.py \
   --mode complete \
   --project-name "Calculator Project" \
-  --app-name "Calculator App" \
+  --app-name "Calculator Application" \
   --iterations 2 \
   --modules '[{"id":"MOD-001","name":"UI Interface Module"},{"id":"MOD-002","name":"Calculation Logic Module"}]'
 
 
 # Method 2.5: Use custom iteration names (recommended)
-# Specify meaningful names for each iteration, instead of the default "Iteration N"
-python scripts/generate_observability_data.py   --mode complete   --project-name "Calculator Project"   --app-name "Calculator App"   --iterations 4   --modules '[{"id":"MOD-001","name":"UI Interface Module"},{"id":"MOD-002","name":"Calculation Logic Module"}]'   --iteration-names '["Core Foundation & Platform","Plan Management & Assumption","Content Generation","Smart Optimization"]'
+# Specify meaningful names for each iteration, not default "Iteration N"
+python scripts/generate_observability_data.py   --mode complete   --project-name "Calculator Project"   --app-name "Calculator Application"   --iterations 4   --modules '[{"id":"MOD-001","name":"UI Interface Module"},{"id":"MOD-002","name":"Calculation Logic Module"}]'   --iteration-names '["Core Foundation and Platform Configuration","Planning Management and Assumption Management","Content Generation Workflow","Intelligent Assistance and Optimization"]'
 
-# Method 3: Generate complete example (includes test suite framework, but tasks, instrumentation points, anomalies left empty)
+# Method 3: Generate complete example (includes test suite framework, but tasks, tracing points, anomalies left empty)
 python scripts/generate_observability_data.py \
   --mode complete \
   --project-name "Calculator Project" \
-  --app-name "Calculator App" \
+  --app-name "Calculator Application" \
   --iterations 2 \
   --modules '[{"id":"MOD-001","name":"UI Interface Module"},{"id":"MOD-002","name":"Calculation Logic Module"}]'
 ```
 
-The script generates three JSON files in the current directory:
+Script generates three JSON files in current directory:
 - `project_data.json`: Project iteration and task data
 - `app_status.json`: Application module status data
-- `test_metrics.json`: Test instrumentation and anomaly data
+- `test_metrics.json`: Test tracing points and anomaly data
 
 **Core Principles**:
-- **Example data provides minimal skeleton only**, does not populate any fake business data
-- **Tasks, instrumentation points, anomalies default to empty**, to be filled by Agent based on actual situation
-- Everything based on real data, avoid misleading
+- **Sample data only provides minimal skeleton**, doesn't fill any false business data
+- **Tasks, tracing points, anomalies default to empty**, filled by agent based on actual situation
+- Everything based on real data, avoid producing misleading information
 
-**Regarding Tasks**:
-- **Script behavior**: By default generates empty tasks array, no additional parameters needed. Agent should fill real data after breaking down tasks based on actual requirements
-- **Task fields**:
-  - `task_id`: Task ID (such as TASK-001)
-  - `task_name`: Task name (specific description, such as "Design calculator UI interface")
+**About Tasks**:
+- **Script Behavior**: Default generates empty tasks array, no additional parameters needed. Agent should decompose tasks based on actual requirements then populate.
+- **Task Fields**:
+  - `task_id`: Task ID (e.g., TASK-001)
+  - `task_name`: Task name (specific description, e.g., "Design calculator UI interface")
   - `status`: Task status (todo/in_progress/completed/delayed)
-  - `assignee`: Assignee (optional, fill if team collaboration needed)
+  - `assignee`: Responsible person (optional, fill when team collaboration needed)
   - `priority`: Priority (low/medium/high/critical)
-  - `tags`: Tags (optional, for categorization)
+  - `tags`: Tags (optional, for classification)
 
-**Regarding Instrumentation Points and Anomalies**:
-- **Default to empty**: Script-generated tracing_points and anomalies are both empty arrays `[]`
-- **Real data filling**: Should be populated by Agent based on actual monitoring data
-- **Data fields**:
-  - `tracing_points`: Test instrumentation points (module, location, status, metric type)
+**About Tracing Points and Anomalies**:
+- **Default Empty**: Tracing points and anomalies generated by script are both empty arrays `[]`
+- **Real Data Filling**: Should be filled by agent based on actual monitoring data
+- **Data Fields**:
+  - `tracing_points`: Test tracing points (module, location, status, metric type)
   - `anomalies`: Anomaly records (type, description, severity, status, occurrence count, time)
 
-**Custom Module Description**:
+**Custom Module Explanation**:
 - Use `--modules` parameter to define modules actually needed by project
-- Module list in JSON format, contains id and name fields
-- When Agent invokes script, should automatically infer appropriate modules based on project requirements
+- Module list in JSON format, containing id and name fields
+- When calling script, agent should automatically infer suitable modules based on project requirements
 
-**⚠️ CRITICAL: Module Definition Rules**
-- **Modules MUST be user-verifiable features**, not technical components
-- **Forbidden module names**: "UI Module", "Backend Module", "Database Module", "Logic Module", "Interface Module" etc.
-- **Correct module examples**: "User Login", "Article List", "Add to Cart", "Search", "Payment"
+**⚠️ Key Rule: Module Definition Rule**
+- **Modules must be user-verifiable functions**, not technical components
+- **Prohibited Module Names**: "UI Module", "Backend Module", "Database Module", "Logic Module", "Interface Module", etc.
+- **Correct Module Examples**: "User Login", "Article List", "Add to Cart", "Search", "Payment"
 - **Think from user perspective**: "What can I see and test?" not "How is it implemented?"
 
-**Subsequent Use**:
-- Directly modify generated JSON files to fit actual project
-- See [references/data_format.md](references/data_format.md) for data format specifications
+**Subsequent Usage**:
+- Directly modify generated JSON files to adapt to actual project
+- Data format instructions in [references/data_format.md](references/data_format.md)
 
-### Step 2: Select Solution and Launch
+### Step 2: Select Solution and Start
 
-**Static Webpage Solution (Recommended)**:
+**Interactive Web Solution (Recommended)**:
 ```bash
-# Generate static HTML file (no Flask required)
-# Data inlined into HTML, no separate JSON files needed
-python scripts/run_web_observability.py \
-  --mode static \
-  --project project_data.json \
-  --app app_status.json \
-  --test test_metrics.json \
-  --output observability.html
-
-# Open observability.html directly in browser to view interface
-# Data inlined, no other files needed
-```
-
-**Interactive Webpage Solution**:
-```bash
-# Launch Web server (first install Flask: pip install flask)
+# Start Web server (need to install Flask first: pip install flask)
 python scripts/run_web_observability.py \
   --mode web \
   --project project_data.json \
@@ -191,571 +176,392 @@ python scripts/run_web_observability.py \
   --host 127.0.0.1 \
   --port 5000
 
-# Visit http://127.0.0.1:5000 to view interface, data auto-refreshes every 30 seconds
+# Access http://127.0.0.1:5000 to view interface, data auto-refreshes every 30 seconds
 ```
 
-**Notes**:
-- Static mode: Data inlined into HTML file, fixed after generation, click refresh button to re-render
-- Web mode: Real-time data updates, no need to regenerate, visit http://127.0.0.1:5000 to view interface
+**Static Web Solution**:
+```bash
+# Generate static HTML file (no Flask required)
+# Data will be inlined to HTML, no additional JSON files needed
+python scripts/run_web_observability.py \
+  --mode static \
+  --project project_data.json \
+  --app app_status.json \
+  --test test_metrics.json \
+  --output observability.html
 
-### Step 3: Invoke skill-manager to Store Deployment Information
+# Directly open observability.html in browser to view interface
+# Data inlined, no other files needed
+```
 
-After deployment complete, invoke **skill-manager** skill to store deployment information, facilitating future management and skill collaboration.
+**Explanation**:
+- Web mode: Data updates in real-time, no regeneration needed, access http://127.0.0.1:5000 to view interface
+- Static mode: Data inlined to HTML file, generate once then data fixed, click refresh button to re-render
 
-See [references/deployment_details.md](references/deployment_details.md) for detailed invocation methods.
+### Step 3: Call skill-manager to store deployment information
+After deployment, call **skill-manager** skill to store deployment information, facilitate subsequent management and skill collaboration.
+
+Detailed call methods in [references/deployment_details.md](references/deployment_details.md).
 
 ### Step 4: Continuously Update Data
+During development, regularly update data files, then regenerate static HTML (static mode) or refresh page (Web mode). Agent can help you analyze existing data, identify content needing updates.
 
-During development, periodically update data files, then regenerate static HTML (static mode) or refresh page (Web mode). Agent can assist you in analyzing existing data and identifying content needing updates.
+### Step 5: Guidance after skill execution completion
 
-### Step 5: Post-Execution Guidance
-
-**Agent should proactively remind user**:
-After executing Cox skill, Agent should proactively remind user to view project page and inform current status and next action recommendations.
+**Agent should actively remind users**:
+After executing COX skill, agent should actively remind user to view project page, inform current status and next action suggestions.
 
 **Standard Guidance Process**:
 
 1. **Inform user data generated**
-   - Clearly state project data files have been generated
-   - State project page has been generated
+   - Clearly state project data files generated
+   - Explain project page generated
 
 2. **Provide viewing method**
+   - Web mode: Access http://127.0.0.1:5000
    - Static mode: Open observability.html in browser
-   - Web mode: Visit http://127.0.0.1:5000
 
 3. **Summarize current iteration plan**
    - Read current_iteration from project_data.json
    - List all tasks in current iteration (task_name, status)
-   - State completed/in-progress/pending task counts
+   - Explain number of completed/in-progress/pending tasks
 
-4. **Identify next actions**
+4. **Identify next action**
    - Find tasks with status pending or todo
    - Sort by priority: critical > high > medium > low
    - Recommend next task to handle
 
 5. **Coordinate other skills**
-   - For tasks requiring development, suggest invoking development skill (such as cox-coding)
-   - For tasks requiring testing, suggest updating test_metrics.json
-   - For tasks requiring deployment, suggest invoking skill-manager
+   - For development tasks, suggest calling development skills (e.g., cox-coding)
+   - For testing tasks, suggest updating test_metrics.json
+   - For deployment tasks, suggest calling skill-manager
 
-6. **User confirmation**
-   - Ask user: "Which task would you like to start handling now?"
-   - Invoke corresponding skill based on user selection
+6. **User Confirmation**
+   - Ask user: "Which task would you like to start now?"
+   - Call corresponding skill based on user selection
 
-**Example Dialogue**:
+**Sample Dialogue**:
 ```
 Agent: COX has generated project data for you.
 
-You can view project page through:
+You can view project page via the following methods:
+- Web mode: Access http://127.0.0.1:5000
 - Static mode: Open observability.html in browser
-- Web mode: Visit http://127.0.0.1:5000
 
-Current iteration: Iteration 1 - Core Feature Development
+Current iteration: Iteration 1 - Basic Function Development
 - Completed: 2 tasks
 - In Progress: 1 task
 - Pending: 3 tasks
 
-COX recommended next actions:
+COX suggests next action:
 1. Complete task "User Login API" (priority: high)
 2. Start task "Data Persistence Module" (priority: medium)
 
-Which task would you like to start handling now? Or do you have other ideas?
+Which task would you like to start now? Or do you have other ideas?
 ```
 
-## Core Functionality Description
+## Core Function Explanation
 
-### Agent-Processable Functions
-- **Requirement Analysis & Module Planning**: Based on user requirements (such as "Build a calculator"), analyze core features, automatically infer appropriate module list
-- **Data Generation Guidance**: Generate custom module list based on project requirements, invoke data generation script
-- **Data Analysis**: Analyze existing observability data, identify project risks and bottlenecks
-- **Usage Guidance**: Answer solution selection and deployment questions
-- **Data Update Recommendations**: Provide data update recommendations based on development progress
-- **Module Status Update**: Use `scripts/collect_data.py update-module` command to update module maturity after code analysis and user confirmation
-- **User Feedback Handling**: Record user feedback from interactive webpage, incorporate into next iteration planning based on priority
-- **Issue Tracking & Response**: Identify complex issues and recurring issues, automatically update observability data (TODO tasks, hypothesis analysis, instrumentation recommendations)
+### Functions Agent Can Handle
+- **Requirement Analysis and Module Planning**: According to user requirements (e.g., "make a calculator") analyze core functions, automatically infer suitable module list
+- **Data Generation Guidance**: Generate custom module list based on project requirements, call data generation script
+- **Data Analysis**: Analyze existing observability data, identify project bottlenecks
+- **Usage Guidance**: Answer questions about selection and deployment of two solutions
+- **Data Update Suggestions**: Provide data update suggestions based on development progress
+- **Module Status Updates**: Use `scripts/collect_data.py update-module` command to update module maturity after code analysis and user confirmation
+- **User Feedback Processing**: Record user feedback from interactive web, incorporate into next iteration planning based on priority
+- **Issue Tracking and Response**: Identify complex and recurring issues, automatically update observation data (TODO tasks, assumption analysis, tracing point suggestions)
 
-For detailed workflows, see: [Agent Workflow Guide](references/agent-workflows.md)
+Detailed workflow: [Agent Workflow Guide](references/agent-workflows.md)
 
-### Script-Implemented Functions
-- **Data Generation**: `scripts/generate_observability_data.py` generates compliant observability data (avoiding LLM hallucinations)
-- **Data Collection & Validation**: `scripts/collect_data.py`
-  - Validates JSON data format compliance
-  - **update-module command**: Update module status after code analysis and user confirmation
+### Script Implementation Functions
+- **Data Generation**: `scripts/generate_observability_data.py` generates observability data compliant with specification (avoid large model hallucinations)
+- **Data Collection and Validation**: `scripts/collect_data.py`
+  - Validate whether JSON data format complies with specification
+  - **update-module Command**: Update module status after code analysis and user confirmation
   - Usage: `python scripts/collect_data.py update-module --app app_status.json --module "ModuleName" --status optimized --rate 1.0 --notes "..."`
-- **Static Webpage Generation**: `scripts/run_web_observability.py --mode static` generates static HTML files (data inlined, no Flask)
-- **Interactive Webpage Service**: `scripts/run_web_observability.py --mode web` launches Flask Web server
+- **Static Web Generation**: `scripts/run_web_observability.py --mode static` generates static HTML file (data inlined, no Flask needed)
+- **Interactive Web Service**: `scripts/run_web_observability.py --mode web` starts Flask Web server
 - **Skill-manager Storage Tool**: `scripts/store_to_skill_manager.py` stores deployment information and issue tracking information
 
 ## Iteration Management Process
 
 ### Trigger Conditions
-When user proposes need to develop new features, build new projects, or implement complex requirements, Agent should proactively enable iteration management process.
+When users propose needs for developing new functions, building new projects, or implementing complex requirements, agent should actively enable iteration management process.
 
-### MVP-Driven Iteration Breakdown Principles
+### MVP-Driven Iteration Splitting Principle
 
-Agent should follow **MVP (Minimum Viable Product)** principles when breaking down iterations:
+When splitting iterations, agent should follow **MVP (Minimum Viable Product)** principle:
 
-1. **First Iteration**: Core features
-   - Identify user-visible core features
-   - Implement in simplest way
-   - Quick delivery for user confirmation
+1. **First Iteration**: Core Functionality
+   - Identify user-visible core functions
+   - Implement with simplest approach
+   - Deliver quickly for user confirmation
 
-2. **Second Iteration**: Enhanced features
+2. **Second Iteration**: Enhanced Functionality
    - Adjust based on user feedback
-   - Add secondary features
+   - Add secondary functions
    - Optimize user experience
 
-3. **Subsequent Iterations**: Improvement & optimization
-   - Gradually refine details
+3. **Subsequent Iterations**: Improvement and Optimization
+   - Gradually improve details
    - Performance optimization
    - Edge case handling
 
-### Iteration Planning Approach
+### Iteration Planning Method
 
-**两阶段规划**:
+**Two-Phase Planning**:
 
-**阶段1 - 项目启动时**:
-- 初步规划 2-3 个迭代的大致方向
-- 调用数据生成脚本: `--iterations 3`
-- 生成迭代框架，但 `tasks` 数组为空
-- 每个 iteration 包含 `modules` 列表，但不包含详细任务
+**Phase 1 - At Project Startup**:
+- Preliminary plan 2-3 iterations' general direction
+- Call data generation script: `--iterations 3`
+- Generate iteration framework, but `tasks` array empty
+- Each iteration contains `modules` list, but no detailed tasks
 
-**阶段2 - 逐个迭代详细规划**:
-- 规划第一个迭代的详细任务，填充 `tasks` 数组
-- 完成后，基于用户反馈规划下一个迭代
-- 每个迭代都基于最新的用户反馈调整
+**Phase 2 - Detailed Planning for Each Iteration**:
+- Plan detailed tasks for first iteration, populate `tasks` array
+- After completion, plan next iteration based on user feedback
+- Each iteration adjusted based on latest user feedback
 
-**关键点**:
-- ✅ 先有迭代框架，逐个填充详细任务
-- ❌ 不是一开始就规划所有迭代的所有细节
+**Key Points**:
+- ✅ Have iteration framework first, then fill detailed tasks one by one
+- ❌ Don't plan all details for all iterations at the beginning
+
+Detailed iteration planning method, risk assessment and implementation decision guidelines in [references/iteration_management.md](references/iteration_management.md).
 
 ### Iteration Management Process
 
-**Step 1: Requirement Analysis & Iteration Breakdown**
-1. Understand core objective of user requirements
-2. Identify user-visible feature points
-3. Break into multiple iterations by priority
+**Step 1: Requirement Analysis and Iteration Splitting**
+1. Understand core objectives of user requirements
+2. Identify user-visible function points
+3. Split into multiple iterations according to priority
 4. Each iteration focuses on a clear objective
 
-**Step 2: Invoke Data Generation Script (Using Custom Modules)**
-Agent should automatically infer module list based on project requirements:
+**Step 2: Call Data Generation Script**
+Agent automatically infers module list based on project requirements and calls data generation script.
 
-```bash
-# Example: Calculator project
-# ⚠️ Modules are user-verifiable features, NOT technical components
-python scripts/generate_observability_data.py \
-  --mode complete \
-  --project-name "Calculator Project" \
-  --app-name "Calculator App" \
-  --iterations 2 \
-  --modules '[{"id":"MOD-001","name":"Number Input & Display"},{"id":"MOD-002","name":"Basic Calculations"},{"id":"MOD-003","name":"Clear & Backspace"}]'
-```
+**Step 3: Agent Decomposes Tasks and Populates Data**
+1. Analyze user requirements, decompose specific tasks
+2. Fill `tasks` array for each iteration
+3. Set task status and priority
 
-**About Task Generation**:
-- Script follows minimal dataset principle, generates no placeholder tasks
-- tasks array always empty `[]`, to be filled with real data by Agent or user manually
-- All task fields (task_id, task_name, assignee, etc.) should be filled based on actual project requirements
-
-**Step 3: Agent Breaks Down Tasks and Populates Data**
-1. Analyze user requirements, break down specific tasks
-2. Populate tasks array for each iteration
-3. Tasks should include specific descriptions (such as "Design calculator UI interface", "Implement addition/subtraction/multiplication/division operations")
-4. assignee field optional, only fill when team collaboration needed
-5. Set status for each task (todo/in_progress/completed)
-
-**Example**: Calculator project task breakdown
-```json
-{
-  "iteration_id": "ITER-001",
-  "iteration_name": "First Iteration",
-  "modules": [
-    {
-      "module_id": "MOD-001",
-      "module_name": "Number Input & Display",
-      "expected_completion": 0.8
-    },
-    {
-      "module_id": "MOD-002",
-      "module_name": "Basic Calculations",
-      "expected_completion": 0.6
-    }
-  ],
-  "tasks": [
-    {
-      "task_id": "TASK-001",
-      "task_name": "Design Calculator UI Interface",
-      "status": "completed",
-      "priority": "high",
-      "tags": ["UI", "Design"]
-    },
-    {
-      "task_id": "TASK-002",
-      "task_name": "Implement Basic Addition/Subtraction/Multiplication/Division Operations",
-      "status": "in_progress",
-      "priority": "critical",
-      "tags": ["Core Features"]
-    }
-  ]
-}
-```
+Detailed script call parameters, task field explanations and examples in [references/iteration_management.md](references/iteration_management.md).
 
 **Step 4: Confirm Iteration Plan with User**
-1. Present first iteration plan and expected outcomes
+1. Show first iteration plan and expected outcomes
 2. Ask user if agree
 3. Adjust plan based on user feedback
 
 **Step 5: Collaborate with Development Skills and Update Data**
-1. Pass iteration planning and task list to development skills (such as cox-coding)
-2. Development skills implement specific features, Cox tracks progress
+1. Pass iteration planning and task list to development skills (e.g., cox-coding)
+2. Development skills implement specific functions, COX tracks progress
 3. Update task status and module completion rate
 4. Confirm outcomes with user
-5. Ask whether to proceed to next iteration
+5. Ask if proceed to next iteration
 
-### Cox and Development Skill Collaboration Example
+Detailed collaboration examples and dialogue flows in [references/iteration_management.md](references/iteration_management.md).
 
-```
-User: Build a calculator
-
-COX: Understood, I'll help plan the calculator project. Let me first create observability data...
-
-[COX invokes scripts to generate data, plan iterations and tasks]
-
-COX: Project planning complete:
-📋 Project name: Calculator Project
-📦 Module planning:
-  - Number Input & Display
-  - Basic Calculations
-  - Clear & Backspace
-
-📅 First iteration plan:
-  - Design calculator UI interface
-  - Implement addition/subtraction/multiplication/division operations
-  - Expected completion time: 7 days
-
-[Task list generated, now requesting development skills to start implementation...]
-
-Development Skill: Task received, starting implementation...
-
-[COX continuously tracks progress, updates task status]
-
-COX: First iteration progress update:
-✅ UI interface design - Completed
-✅ Basic calculation operations - Completed
-⏳ Testing and optimization - In Progress (60%)
-
-Current module completion rate: 75%
-Proceed to second iteration?
-```
-
-### Module Maturity Update Trigger Methods
+### Module Maturity Update Trigger Method
 
 Module maturity data updated via two methods:
 
-**Method 1: AI Proactive Inquiry (Primary Method)**
-- **Trigger Timing**: Periodically or at key milestones (such as iteration completion, important milestones)
-- **Inquiry Content**:
-  1. Feedback on current involved modules
-  2. Module current status (pending/in_progress/developed/confirmed/optimized)
-  3. Module completion rate (AI auto-calculates based on task completion, user can adjust)
-  4. Whether need to add notes
-- **Update Method**: AI automatically updates app_status.json
+**Method 1: AI Active Inquiry (Main Method)**
+- **Trigger Timing**: Iteration completion, important milestone
+- **Inquiry Content**: Module status, completion rate, notes
+- **Update Method**: AI automatically updates `app_status.json`
 
-**Example Dialogue**:
-```
-Agent: Iteration 1 complete, COX will confirm module progress:
-- User Module (expected completion rate 80%)
-  - Current task completion: 3/4 completed
-  - Auto-calculated completion rate: 75%
-  - Please confirm current module status and actual completion rate?
-
-User: Status is in_progress, actual completion rate is 80%
-
-Agent: COX has updated module data:
-- User Module: status in_progress, completion rate 80%, last updated 2024-01-26
-```
-
-**Method 2: Interactive Webpage Support (Auxiliary Method)**
-- **Use Case**: User uses interactive webpage solution (--mode web)
-- **Operation Method**: User can directly select/modify module status labels on webpage
-- **AI Behavior**:
-  1. AI continuously tracks data changes on webpage
-  2. Uses data to drive subsequent decision strategies
-  3. When user modifies module status, AI will notice and handle accordingly:
-     - If user marks module as `has_issue`: Record the issue for next iteration planning
-     - If user marks module as `pending/developed/confirmed/optimized`: Acknowledge the update
-- **When User Says "Continue" or Plans Next Iteration**:
-  1. Collect all pending tasks and recorded user feedback issues
-  2. Evaluate priority for each item
-  3. Plan next iteration based on priority
-  4. After execution, ask user for confirmation
-  5. Update module status using update-module command
+**Method 2: Interactive Web Support (Auxiliary Method)**
+- **Applicable Scenario**: Using interactive web solution
+- **Operation Method**: User directly modifies module status on web page
 - **Advantage**: User can update anytime, no need to wait for AI inquiry
 
-详细流程见: [Agent 工作流程指南 - 用户反馈处理](references/agent-workflows.md#user-feedback-handling)
+Detailed update process, sample dialogues and web display instructions in [references/iteration_management.md](references/iteration_management.md).
 
-### Webpage Display Description
+### Module and Iteration Relationship
 
-Cox's webpage displays grouped by iteration:
-- **Iteration Card**: Each iteration is a separate card
-- **Current Iteration Marker**: Current iteration card has blue border and "Current" label
-- **Progress Bar**: Shows task completion progress for each iteration
-- **Task List**: Task list under each iteration, includes status, assignee, priority
-- **Involved Modules**: Shows modules involved in each iteration and expected completion rate
-- **Development Hypotheses**: Shows development hypotheses and verification status for each iteration
+**Same concept, different perspectives**:
 
-**Module Maturity Display**:
-- **Module Card**: Shows status and completion rate for each module
-- **Progress Bar**: Visualizes module completion rate
-- **Last Update Time**: Shows last update time of module data
-- **Auto Update**: AI proactive inquiry or user modification on webpage auto-updates
-
-### Modules & Iterations Relationship
-
-**同一个概念，不同视角**:
-
-| 维度 | 迭代中的模块 (project_data.json) | 模块成熟度 (app_status.json) |
+| Dimension | Modules in Iteration (project_data.json) | Module Maturity (app_status.json) |
 |------|--------------------------------|----------------------------|
-| 文件 | project_data.json | app_status.json |
-| 视角 | 规划：这个迭代要做什么 | 状态：现在做到什么程度 |
-| 字段 | `expected_completion` | `status`, `completion_rate`, `issue_description` |
-| 更新时机 | 迭代规划时 | 开发过程中持续更新 |
-| 作用 | 记录迭代计划 | 追踪实际进度和问题 |
+| File | project_data.json | app_status.json |
+| Perspective | Planning: What to do in this iteration | Status: How far along we are now |
+| Field | `expected_completion` | `status`, `completion_rate` |
+| Update Timing | During iteration planning | Continuously updated during development |
 
-**关键点**:
-- 一个迭代可以涉及多个模块
-- 一个模块可以跨越多个迭代（如 80% → 100%）
-- 通过 `module_id` 关联两个文件中的同一模块
-
-### Example Scenario
-
-**User says**: "Use Cox skill to build a blog"
-
-**Agent Response**:
-1. Understand requirement: User wants Cox to assist blog system development
-2. Cox plans project:
-   - Iteration 1: Core blog features (article list, article detail, publish article)
-   - Iteration 2: Comment feature
-   - Iteration 3: User system
-3. Cox generates observability data (project progress, task list, module planning)
-4. Cox presents Iteration 1 plan to user
-5. After user confirmation, Cox passes tasks to development skill (such as cox-coding)
-6. Development skills implement features, Cox continuously tracks progress and updates observability data
-7. Upon completion, ask for module feedback, update module maturity
-8. Ask whether to proceed to Iteration 2
-
-**Step 6: Advance to Next Iteration**
-1. Plan next iteration based on user feedback
-2. Plan tasks and involved modules for next iteration
-3. Update iteration plan in project_data.json
-4. Repeat steps 4-5
+**Key Points**:
+- One iteration can involve multiple modules
+- One module can span multiple iterations
+- Same module in both files associated via `module_id`
 
 ### Important Notes
-- **Cox doesn't directly develop**: Cox responsible for project management and observability, development done by other skills
-- **Cox is auxiliary tool**: Cox helps plan and track, but doesn't write code
-- **Collaboration Mode**: Cox + development skills (such as cox-coding) work together
-- **User can choose independently**: User can choose to only use Cox for project management, or use together with development skills
+- **COX doesn't develop directly**: COX responsible for project management and observability, development work completed by other skills
+- **COX is auxiliary tool**: COX helps with planning and tracking, but doesn't write code
+- **Collaboration Mode**: COX + Development Skills (e.g., cox-coding) work together
+- **User Can Choose**: User can choose to use only COX for project management, or collaborate with development skills
 
-### Precautions
-- Each iteration objective must be clear and verifiable
-- Prioritize user-visible features, not internal technical details
-- Must confirm with user after each iteration
-- Next iteration plan should be based on user feedback
-- Timely update project_data.json to reflect actual progress
-- Modules involved in iteration determined during planning, not asked afterwards
-- Module maturity updated via two methods: AI proactive inquiry (primary) and interactive webpage (auxiliary)
-- Module completion rate auto-calculated by Agent based on task completion, user can adjust
+### Notes
+- Each iteration's objective must be clear and verifiable
+- Prioritize implementing user-visible functions, not internal technical details
+- Must confirm with user after each iteration ends
+- Next iteration's plan should be based on user feedback
+- Timely update `project_data.json` to reflect actual progress
+- Modules involved in each iteration determined during planning, not afterwards
+- Module maturity updated via two methods: AI active inquiry (main) and interactive web (auxiliary)
+- Module completion rate automatically calculated by agent based on task completion, user can adjust
 
 ## Task Risk Assessment and Implementation Decision
 
 ### Overview
 
-每个任务除了 `priority`（重要等级）外，还有 `risk_level`（风险等级）。Agent 在规划任务时自动评估风险等级，在实施时根据两个维度判断执行策略。
+Each task besides `priority` (importance level) has `risk_level` (risk level). Agent automatically assesses risk level when planning tasks, judges execution strategy based on two dimensions when implementing.
 
-### Risk Assessment Criteria
+### Risk Assessment Standards
 
-Agent 根据以下维度自动判断任务风险：
+Agent automatically judges task risk based on following dimensions:
 
-| Assessment Dimension | high (High Risk) | low (Low Risk) |
+| Judgment Dimension | high (high risk) | low (low risk) |
 |---------|---------------|--------------|
-| **Modification Scope** | Core modules, multi-file modification | Single file, local modification |
+| **Modification Scope** | Core modules, multi-file modifications | Single file, local modifications |
 | **Impact Scope** | Affects multiple functions | Affects single function |
-| **Modification Type** | Data structure change, architecture adjustment | UI adjustment, text modification |
-| **Rollback** | Difficult to rollback | Easy to rollback |
+| **Modification Type** | Data structure changes, architecture adjustments | UI adjustments, text modifications |
+| **Rollback Ability** | Hard to rollback | Easy to rollback |
 
 **Examples**:
-- `high`: Modify authentication flow, refactor data model, change API
-- `low`: Adjust button styles, modify error messages, add logs
+- `high`: Modify user authentication process, refactor data model, change API interface
+- `low`: Adjust button style, modify error message text, add log output
 
 ### Implementation Decision Logic
 
-**排序规则**：
-1. 首先按 `priority` 排序：critical > high > medium > low
-2. 然后按 `risk_level` 分组
+**Sorting Rules**:
+1. First sort by `priority`: critical > high > medium > low
+2. Then group by `risk_level`
 
-**实施策略**：
+**Implementation Strategy**:
 
-| 组合 | 策略 | 说明 |
+| Combination | Strategy | Explanation |
 |-----|------|------|
-| Critical + Low | 批量处理 | 可以多个任务一起做，批量验证 |
-| Critical + High | 单独处理 + 立即验证 | 一个一个做，每个做完立即验证 |
-| High + Low | 批量处理 | 可以多个任务一起做，批量验证 |
-| High + High | 单独处理 + 立即验证 | 一个一个做，每个做完立即验证 |
-| Medium/Low + Low | 批量处理 | 可以多个任务一起做 |
-| Medium/Low + High | 单独处理 | 建议单独处理，根据情况决定是否立即验证 |
+| Critical + Low | Batch processing | Can do multiple tasks together, batch verification |
+| Critical + High | Individual processing + Immediate verification | Do one by one, verify immediately after each completion |
+| High + Low | Batch processing | Can do multiple tasks together, batch verification |
+| High + High | Individual processing + Immediate verification | Do one by one, verify immediately after each completion |
+| Medium/Low + Low | Batch processing | Can do multiple tasks together |
+| Medium/Low + High | Individual processing | Suggest individual processing, decide whether to verify immediately based on situation |
 
-**核心原则**：
-- ✅ 风险小的任务可以一起修改，批量验证，提高效率
-- ❌ 不要将大风险和多个小风险混在一起做
-- ❌ 做了大风险任务后，不要不及时验证
-- ✅ 实施大风险任务后，提醒用户立即验证
+**Core Principles**:
+- ✅ Low-risk tasks can be modified together, batch verification, improve efficiency
+- ❌ Don't mix high-risk and multiple low-risk tasks together
+- ❌ Don't not verify promptly after completing high-risk task
+- ✅ After implementing high-risk task, remind user to verify immediately
 
-### User Reminder Format
+Detailed user reminder formats, sample workflows and best practices in [references/iteration_management.md](references/iteration_management.md).
 
-在实施高风险任务前或后，Agent 应提醒用户：
-
-```
-**COX 提醒您**：即将实施高风险任务「修改用户认证数据结构」。
-- 涉及文件：user_model.py, auth_service.py
-- 影响范围：所有需要登录的功能
-- 完成后请立即验证登录功能是否正常
-```
-
-或实施后提醒：
-
-```
-**COX 提醒您**：高风险任务「修改用户认证数据结构」已完成。
-请立即验证以下功能：
-1. 用户登录是否正常
-2. 注册流程是否正常
-3. 会话保持是否正常
-
-验证通过后，我将继续下一个任务。
-```
-
-### Example Workflow
-
-```
-Agent: 当前迭代有以下待处理任务：
-
-按优先级和风险排序：
-1. [Critical+High] 修改用户认证数据结构 → 单独处理
-2. [Critical+Low] 优化登录API响应时间 → 可批量处理
-3. [High+Low] 添加用户头像功能 → 可批量处理
-4. [Medium+High] 重构权限管理系统 → 单独处理
-
-建议实施顺序：
-**第一批（低风险批量）**：任务2 + 任务3
-- 一起修改，完成后批量验证
-
-**第二批（高风险单独）**：任务1
-- 单独处理，完成后立即验证
-
-**COX 提醒您**：任务1涉及核心数据结构变更，完成后请务必验证所有登录相关功能。
-
-用户确认后，我再继续任务4。
-```
-
-## User Feedback Handling Process
+## User Feedback Processing Flow
 
 ### Overview
 
-当用户在交互式网页上标记模块为 `has_issue` 时，Agent 应记录问题，在下次规划迭代时按优先级处理。
+When user marks module as `has_issue` on interactive web page, Agent should record issue, handle by priority when planning next iteration.
 
-### Priority Guidelines
+### Priority Guide
 
-| Priority | Type | Examples |
+| Priority | Type | Example |
 |----------|------|----------|
-| Critical | Security issues | Data breaches, authentication bypass |
-| High | Functional bugs | Core features not working, crashes |
-| High | Performance issues | Slow response, timeouts |
-| Medium | UI/UX improvements | "Not beautiful enough", hard to use |
-| Medium | Minor bugs | Typos, small visual issues |
-| Low | Feature suggestions | "Would be nice to have..." |
+| Critical | Security Issue | Data leak, authentication bypass |
+| High | Functional BUG | Core function unusable, crashes |
+| High | Performance Issue | Slow response, timeouts |
+| Medium | UI/UX Optimization | "Not aesthetic enough", hard to use |
+| Medium | Small BUG | Typos, small style issues |
+| Low | Feature Suggestions | "Would be nice if could add..." |
 
-### Flow Summary
+### Process Overview
 
 ```
 User marks has_issue
     ↓
-COX records issue (don't fix immediately)
+    Record issue (issue ID, priority, affected module)
     ↓
-Continue current work
+    Continue current work (don't interrupt)
     ↓
-User says "Continue" or "Plan next iteration"
+    When user says "continue" or "plan next iteration"
     ↓
-COX prioritizes all issues + tasks
+    Collect all pending items:
+    - Existing TODO tasks
+    - User feedback issues
     ↓
-Plan iteration based on priority
+    Evaluate priority for all items
     ↓
-Execute and confirm with user
+    Plan next iteration based on priority
     ↓
-Update module status
+    Execute tasks according to plan
+    ↓
+    Ask user for confirmation after completion
+    ↓
+    Update module status after user confirms
 ```
 
-For detailed workflow and dialogue examples, see: [Agent Workflow Guide - User Feedback Handling](references/agent-workflows.md#user-feedback-handling)
+### Processing Principles
 
-## Issue Tracking & Response
+1. **Don't interrupt current work**: After recording user feedback, continue completing current iteration
+2. **Batch processing**: When planning next iteration, evaluate all pending items and feedback uniformly
+3. **Priority-driven**: High-priority issues processed first
+4. **User confirmation**: Must get user confirmation before updating status after resolving issue
+
+Detailed workflow, priority matrix, and scenario handling in [references/agent-workflows.md](references/agent-workflows.md).
+
+## Issue Tracking and Response
+
+### Overview
+
+When encountering complex or recurring issues, Agent should actively initiate issue tracking process to ensure systematic handling and continuous monitoring.
 
 ### Trigger Conditions
-Agent should proactively trigger issue tracking and response when:
-1. **Complex Issues**: User feedback involves multiple modules, requires multi-step resolution, or needs cross-team collaboration
-2. **Recurring Issues**: Same issue appears multiple times in conversation (2 or more), and fails to resolve smoothly
 
-### Response Steps Overview
-1. Identify issue and determine affected modules
-2. Update project dimension TODO list
-3. Add issue-related hypothesis analysis
-4. Suggest adding related instrumentation points
-5. Invoke skill-manager to store issue information
+Agent should actively trigger issue tracking when:
+1. **Complex Issues**: Involving multiple modules, requiring multi-step resolution
+2. **Recurring Issues**: Same issue appears 2+ times in conversation without resolution
 
-See [references/issue_tracking_details.md](references/issue_tracking_details.md) for detailed response process and usage examples.
+### Response Process
 
-### Agent Processing Flow
-1. Monitor conversation context, identify complex issues and recurring issues
-2. Analyze issue impact scope, determine related modules
-3. Generate issue ID (format: ISSUE-NNN)
-4. Update project_data.json: add TODO tasks and hypotheses
-5. Update test_metrics.json: add instrumentation recommendations
-6. Invoke skill-manager to store issue tracking information
-7. **COX** reports taken observation update measures to user
+1. **Identify Issue and Determine Affected Modules**
+2. **Update project_data.json**: Add TODO task with issue details
+3. **Update test_metrics.json**: Add tracing point suggestions
+4. **Update project_data.json**: Add assumption analysis
+5. **Call skill-manager**: Store issue information
+6. **Report User**: Inform taken measures
 
-## Resource Index
-- **Data Format Specifications**: See [references/data_format.md](references/data_format.md) (format definitions, validation rules, and examples for all data files)
-- **Troubleshooting Guide**: See [references/troubleshooting.md](references/troubleshooting.md) (common issues, error codes, and solutions)
-- **Deployment Details**: See [references/deployment_details.md](references/deployment_details.md) (detailed configuration and usage instructions for both solutions)
-- **Issue Tracking Details**: See [references/issue_tracking_details.md](references/issue_tracking_details.md) (complete process and examples for issue tracking and response)
-- **Deployment Guide**: See [references/deployment_guide.md](references/deployment_guide.md) (detailed deployment steps, configuration instructions, and best practices for both solutions)
-- **Data Generation Tool**: See [scripts/generate_observability_data.py](scripts/generate_observability_data.py) (generate compliant observability data, avoid LLM hallucinations)
-- **Data Collection Tool**: See [scripts/collect_data.py](scripts/collect_data.py) (data format validation and collection tool)
-- **Web Interface Server**: See [scripts/run_web_observability.py](scripts/run_web_observability.py) (static/Web dual-mode interface generation)
-- **Skill-manager Storage Tool**: See [scripts/store_to_skill_manager.py](scripts/store_to_skill_manager.py) (store deployment information and issue tracking information to skill-manager)
-- **Web Interface Templates**: See [assets/web_templates/](assets/web_templates/) (HTML templates and style files)
-- **Docker Configuration**: See [assets/docker_compose/](assets/docker_compose/) (complete configuration for comprehensive solution)
+Detailed process, implementation steps, and examples in [references/issue_tracking_details.md](references/issue_tracking_details.md).
 
-## Precautions
-- Both solutions use same data format, can switch anytime based on requirements
-- Data files support incremental updates, no need to rewrite entire content each time
-- Recommend using scripts rather than LLM to generate data, avoiding format errors
-- Interactive solution Web interface defaults to port 5000, can modify via parameters
-- Comprehensive solution requires Docker environment, recommend using static solution first to validate requirements
+## Data Format Reference
+
+### project_data.json
+Contains project iteration and task information. Format specification in [references/data_format.md](references/data_format.md).
+
+### app_status.json
+Contains application module status information. Format specification in [references/data_format.md](references/data_format.md).
+
+### test_metrics.json
+Contains test metrics and anomaly information. Format specification in [references/data_format.md](references/data_format.md).
+
+## Common Issues
+
+### JSON Format Issues
+When encountering "Extra data" error during parsing, likely contains invisible characters. Solution: Use Python to re-read and write file, or use `python -m json.tool` to verify format.
+
+### Module ID Consistency
+Ensure module IDs consistent between project_data.json and app_status.json. Inconsistent IDs cause data association failure.
+
+### File Permissions
+On some systems, may encounter permission issues when modifying files. Solutions: Use Python os module instead of bash commands, or modify file permissions.
+
+Detailed troubleshooting methods and solutions in [references/troubleshooting.md](references/troubleshooting.md).
 
 ## Best Practices
-- **Data Initialization**: Use `generate_observability_data.py` script to generate initial data files, ensure 100% correct format
-- **Data Updates**: Recommend updating observability data daily or after each iteration
-- **Data Reuse**: Data files can be shared by multiple skills and tools, avoiding duplicate creation
-- **Solution Selection**: Use static solution for restricted environments (such as sandboxes), interactive solution for real-time monitoring needs
-- **Hypothesis Management**: Record development hypotheses in project_data.json, regularly verify and update
-- **Module Status Tracking**: Use application dimension monitoring to track module status, identify development bottlenecks
-- **Anomaly Priority**: Prioritize handling high-frequency anomalies in test dimension, improve quality
-- **Issue Response**: Utilize issue tracking functionality, timely update observability data, accelerate issue resolution
-- **Data Validation**: Before generating observability interface, use check scripts to validate data consistency:
-  ```bash
-  # Check module consistency
-  python scripts/check_module_consistency.py
 
-  # Validate JSON format
-  python -m json.tool project_data.json > /dev/null
-  python -m json.tool app_status.json > /dev/null
-  python -m json.tool test_metrics.json > /dev/null
-  ```
-- **Troubleshooting**: When encountering issues, see [references/troubleshooting.md](references/troubleshooting.md)
+1. **Use Scripts**: Always use data generation scripts instead of manually editing JSON files
+2. **Regular Updates**: Update data files regularly to reflect actual project status
+3. **Meaningful Iterations**: Give iterations meaningful names instead of generic "Iteration N"
+4. **User-Centric Modules**: Define modules from user perspective, not technical implementation
+5. **Risk Awareness**: Assess task risks and adjust implementation strategy accordingly
+6. **Collaborative Workflow**: Use COX for planning and tracking, other skills for implementation
+7. **Continuous Feedback**: Regularly collect user feedback and incorporate into planning
+
+By following these practices, you can maximize the benefits of COX for project management and observability.
