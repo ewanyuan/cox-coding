@@ -274,6 +274,18 @@ COX 建议的下一步行动：
 
 详细工作流程见：[Agent 工作流程指南](references/agent-workflows.md)
 
+**关键工作流程**：
+- 用户反馈处理：[references/agent-workflows.md](references/agent-workflows.md#2-user-feedback-processing-workflow)
+- 问题追踪：[references/agent-workflows.md](references/agent-workflows.md#4-issue-tracking-workflow)
+- 常见场景：[references/agent-workflows.md](references/agent-workflows.md#5-common-scenario-handling)
+
+**重要：用户反馈处理**
+- **在规划任何迭代之前，必须检查 app_status.json 中的用户反馈（状态为 "has_issue" 的模块）**
+- 用户反馈位置：app_status.json（module.status = "has_issue"，module.issue_description）
+- 检查时机：在最终确定迭代任务之前（步骤3.5）
+- 优先级评估：使用 references/agent-workflows.md 中的优先级评估矩阵
+- **用户反馈必须被视为高优先级输入，并在迭代规划中明确报告**
+
 ### 脚本实现的功能
 - **数据生成**：`scripts/generate_observability_data.py` 生成符合规范的可观测数据（避免大模型幻觉）
 - **数据采集与验证**：`scripts/collect_data.py`
@@ -345,12 +357,38 @@ COX 建议的下一步行动：
 2. 为每个迭代填充 `tasks` 数组
 3. 设置任务状态和优先级
 
+**步骤3.5：检查用户反馈（关键）**
+在最终确定迭代任务之前，智能体必须：
+
+1. **扫描用户反馈**
+   - 读取 app_status.json
+   - 查找所有状态为 "has_issue" 的模块
+   - 提取每个受影响模块的 issue_description
+
+2. **评估反馈优先级**
+   - 使用 [references/agent-workflows.md](references/agent-workflows.md#priority-evaluation-matrix) 中的优先级评估矩阵
+   - 确定优先级：Critical > High > Medium > Low
+
+3. **为反馈创建任务**
+   - 创建任务，名称为："修复用户反馈：[issue_description]"
+   - 根据矩阵设置优先级
+   - 添加标签："user-feedback"
+   - 根据复杂度设置 risk_level
+
+4. **在迭代中优先级排序**
+   - Critical/High 优先级反馈 → 当前迭代
+   - Medium/Low 优先级反馈 → 下一迭代
+   - 在迭代说明中记录决策
+
 详细脚本调用参数、任务字段说明和示例见 [references/iteration_management.md](references/iteration_management.md)。
 
 **步骤4：与用户确认迭代计划**
 1. 展示第一迭代的计划和预期成果
-2. 询问用户是否同意
-3. 根据用户反馈调整计划
+2. **列出任何用户反馈任务及其优先级**
+3. **说明哪些反馈包含在当前迭代中**
+4. **说明哪些反馈推迟到未来迭代（并说明原因）**
+5. 询问用户是否同意
+6. 根据用户反馈调整计划
 
 **步骤5：与开发技能协作并更新数据**
 1. 将迭代规划和任务列表传递给开发技能（如 cox-coding）

@@ -345,12 +345,38 @@ Agent automatically infers module list based on project requirements and calls d
 2. Fill `tasks` array for each iteration
 3. Set task status and priority
 
+**Step 3.5: Check User Feedback (CRITICAL)**
+Before finalizing iteration tasks, agent MUST:
+
+1. **Scan for User Feedback**
+   - Read app_status.json
+   - Find all modules with status "has_issue"
+   - Extract issue_description for each affected module
+
+2. **Evaluate Feedback Priority**
+   - Use Priority Evaluation Matrix from [references/agent-workflows.md](references/agent-workflows.md#priority-evaluation-matrix)
+   - Determine priority: Critical > High > Medium > Low
+
+3. **Create Tasks for Feedback**
+   - Create task with name: "Fix user feedback: [issue_description]"
+   - Set priority based on matrix
+   - Add tag: "user-feedback"
+   - Set risk_level based on complexity
+
+4. **Prioritize in Iteration**
+   - Critical/High priority feedback → Current iteration
+   - Medium/Low priority feedback → Next iteration
+   - Document decision in iteration notes
+
 Detailed script call parameters, task field explanations and examples in [references/iteration_management.md](references/iteration_management.md).
 
 **Step 4: Confirm Iteration Plan with User**
 1. Show first iteration plan and expected outcomes
-2. Ask user if agree
-3. Adjust plan based on user feedback
+2. **List any user feedback tasks with their priority**
+3. Explain which feedback is included in current iteration
+4. Explain which feedback is deferred to future iterations (with reason)
+5. Ask user if agree
+6. Adjust plan based on user feedback
 
 **Step 5: Collaborate with Development Skills and Update Data**
 1. Pass iteration planning and task list to development skills (e.g., cox-coding)
