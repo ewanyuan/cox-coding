@@ -85,6 +85,64 @@ Before starting, please select a deployment solution based on team needs. Detail
 
 ## Quick Start
 
+### Step 0: Mid-Project Onboarding Detection (For Mid-Project COX Invocation)
+
+Before executing any operations, the agent should first detect whether mid-project takeover is needed:
+
+**Detection Conditions**:
+- `project_data.json` file does not exist
+- Current directory contains other files (code, documentation, configuration, etc.)
+
+**Execution Flow**:
+
+1. **Detect Project Content**
+   - Use `ls` or `Glob` to check if current directory has files
+   - If files exist but `project_data.json` is missing, trigger mid-project onboarding flow
+
+2. **Prompt User**
+   ```
+   Detected existing project content, but not yet connected to COX observability system.
+   COX can help you take over project management and continue planning iterations and tasks.
+   ```
+
+3. **Ask User (Choose One)**
+   - a) "Do you have project progress documentation (README, plan, TODO, etc.)? Please provide path"
+   - b) "Tell me directly what features are completed and what issues exist"
+   - c) "Analyze existing files to automatically infer project progress"
+
+4. **Process User Input**
+   - **Option a**: Read documentation, extract feature list and progress information
+   - **Option b**: Parse user description, organize feature list
+   - **Option c**: Use `Grep`, `Read` to analyze code/documentation structure
+
+5. **Generate First Iteration**
+   - Iteration name: `ITER-001` - "COX Onboarding - Project Status Review"
+   - Mark completed features as `completed` tasks
+   - Mark issues/pending features as `todo` or `in_progress` tasks
+   - Infer module list based on content
+
+6. **Enter Subsequent Flow**
+   - Execute Step 1: Generate complete data files
+   - Subsequent flow same as normal startup
+
+**Sample Dialogue**:
+```
+Agent: Detected existing project content, but not yet connected to COX observability system.
+
+How would you like me to understand current project progress?
+a) Provide project progress documentation (README, plan, etc.)
+b) Tell me directly about completed and pending features
+c) Analyze existing files to automatically infer
+
+User: Choose b, I've completed user login and article list features, but comment feature has issues
+
+Agent: Understood. I'll generate project data for you:
+- Completed: User login, Article list
+- Pending fix: Comment feature issues
+
+Generating project observability data...
+```
+
 ### Step 1: Generate Observability Data
 
 **Recommended Method: Use Script to Generate Data**

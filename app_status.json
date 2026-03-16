@@ -1,0 +1,71 @@
+{
+  "app_name": "英文博客应用",
+  "version": "1.0.0",
+  "last_updated": "2026-02-05 10:43:03",
+  "modules": [
+    {
+      "module_id": "MOD-001",
+      "module_name": "文章列表",
+      "status": "has_issue",
+      "owner": "Developer",
+      "completion_rate": 1.0,
+      "last_update": "2026-02-05",
+      "notes": "显示博客文章列表 - 已实现响应式设计",
+      "issue_description": "需要分页功能。"
+    },
+    {
+      "module_id": "MOD-002",
+      "module_name": "文章详情",
+      "status": "optimized",
+      "owner": "Developer",
+      "completion_rate": 1.0,
+      "last_update": "2026-02-05",
+      "notes": "查看完整文章内容 - 已实现 Markdown 渲染"
+    },
+    {
+      "module_id": "MOD-003",
+      "module_name": "文章创建",
+      "status": "optimized",
+      "owner": "Developer",
+      "completion_rate": 1.0,
+      "last_update": "2026-02-05",
+      "notes": "创建新博客文章 - 已实现 Markdown 编辑器"
+    },
+    {
+      "module_id": "MOD-004",
+      "module_name": "文章编辑",
+      "status": "pending",
+      "owner": "Developer",
+      "completion_rate": 0.0,
+      "last_update": "2026-02-05",
+      "notes": "编辑现有文章 - 计划在迭代 2"
+    },
+    {
+      "module_id": "MOD-005",
+      "module_name": "分类管理",
+      "status": "pending",
+      "owner": "Developer",
+      "completion_rate": 0.0,
+      "last_update": "2026-02-05",
+      "notes": "管理文章分类 - 计划在迭代 2"
+    },
+    {
+      "module_id": "MOD-006",
+      "module_name": "评论系统",
+      "status": "pending",
+      "owner": "Developer",
+      "completion_rate": 0.0,
+      "last_update": "2026-02-05",
+      "notes": "用户评论功能 - 计划在迭代 3"
+    },
+    {
+      "module_id": "MOD-007",
+      "module_name": "搜索",
+      "status": "pending",
+      "owner": "Developer",
+      "completion_rate": 0.0,
+      "last_update": "2026-02-05",
+      "notes": "按关键词搜索文章 - 计划在迭代 3"
+    }
+  ]
+}

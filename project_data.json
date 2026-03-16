@@ -1,0 +1,321 @@
+{
+  "project_name": "英文博客",
+  "current_iteration": "ITER-002",
+  "iterations": [
+    {
+      "iteration_id": "ITER-001",
+      "iteration_name": "MVP 核心功能",
+      "status": "completed",
+      "start_date": "2026-02-04",
+      "end_date": "2026-02-05",
+      "tasks": [
+        {
+          "task_id": "TASK-001",
+          "task_name": "搭建项目结构和依赖",
+          "status": "completed",
+          "priority": "critical",
+          "risk_level": "low",
+          "assignee": "Developer",
+          "tags": ["setup", "infrastructure"]
+        },
+        {
+          "task_id": "TASK-002",
+          "task_name": "设计文章数据模型",
+          "status": "completed",
+          "priority": "critical",
+          "risk_level": "high",
+          "assignee": "Developer",
+          "tags": ["database", "model"]
+        },
+        {
+          "task_id": "TASK-003",
+          "task_name": "实现文章列表页面",
+          "status": "completed",
+          "priority": "high",
+          "risk_level": "low",
+          "assignee": "Developer",
+          "tags": ["frontend", "ui"]
+        },
+        {
+          "task_id": "TASK-004",
+          "task_name": "实现文章详情页面",
+          "status": "completed",
+          "priority": "high",
+          "risk_level": "low",
+          "assignee": "Developer",
+          "tags": ["frontend", "ui"]
+        },
+        {
+          "task_id": "TASK-005",
+          "task_name": "实现文章创建表单",
+          "status": "completed",
+          "priority": "high",
+          "risk_level": "low",
+          "assignee": "Developer",
+          "tags": ["frontend", "form"]
+        },
+        {
+          "task_id": "TASK-006",
+          "task_name": "创建文章 API 端点",
+          "status": "completed",
+          "priority": "critical",
+          "risk_level": "high",
+          "assignee": "Developer",
+          "tags": ["backend", "api"]
+        },
+        {
+          "task_id": "TASK-007",
+          "task_name": "设置数据库连接",
+          "status": "completed",
+          "priority": "critical",
+          "risk_level": "high",
+          "assignee": "Developer",
+          "tags": ["database", "infrastructure"]
+        },
+        {
+          "task_id": "TASK-008",
+          "task_name": "添加基础样式和响应式设计",
+          "status": "completed",
+          "priority": "medium",
+          "risk_level": "low",
+          "assignee": "Developer",
+          "tags": ["frontend", "css"]
+        }
+      ],
+      "modules": [
+        {
+          "module_id": "MOD-001",
+          "module_name": "文章列表",
+          "expected_completion": 1.0
+        },
+        {
+          "module_id": "MOD-002",
+          "module_name": "文章详情",
+          "expected_completion": 1.0
+        },
+        {
+          "module_id": "MOD-003",
+          "module_name": "文章创建",
+          "expected_completion": 1.0
+        }
+      ],
+      "assumptions": [
+        {
+          "assumption_id": "ASSUM-001",
+          "description": "用户主要通过桌面浏览器访问博客",
+          "validation_method": "部署后通过分析工具跟踪",
+          "status": "pending",
+          "impact": "high"
+        },
+        {
+          "assumption_id": "ASSUM-002",
+          "description": "文章内容主要是文本，偶尔有图片",
+          "validation_method": "测试期间的用户反馈",
+          "status": "pending",
+          "impact": "medium"
+        },
+        {
+          "assumption_id": "ASSUM-003",
+          "description": "SQLite 数据库足以支持 MVP（预期 < 1000 篇文章）",
+          "validation_method": "使用示例数据进行性能测试",
+          "status": "pending",
+          "impact": "high"
+        },
+        {
+          "assumption_id": "ASSUM-004",
+          "description": "用户更喜欢简单的 Markdown 编辑器而非富文本编辑器",
+          "validation_method": "A/B 测试或用户调查",
+          "status": "pending",
+          "impact": "medium"
+        },
+        {
+          "assumption_id": "ASSUM-005",
+          "description": "页面加载时间低于 2 秒对 MVP 来说可接受",
+          "validation_method": "性能监控",
+          "status": "pending",
+          "impact": "medium"
+        }
+      ]
+    },
+    {
+      "iteration_id": "ITER-002",
+      "iteration_name": "内容管理",
+      "status": "pending",
+      "start_date": "2026-02-06",
+      "end_date": "2026-02-20",
+      "tasks": [
+        {
+          "task_id": "TASK-200",
+          "task_name": "为文章列表模块实现分页功能（用户反馈）",
+          "status": "todo",
+          "priority": "high",
+          "risk_level": "low",
+          "assignee": "Developer",
+          "tags": ["frontend", "feature", "user-feedback"]
+        },
+        {
+          "task_id": "TASK-201",
+          "task_name": "设计文章编辑页面 UI",
+          "status": "todo",
+          "priority": "high",
+          "risk_level": "low",
+          "assignee": "Developer",
+          "tags": ["frontend", "ui", "design"]
+        },
+        {
+          "task_id": "TASK-202",
+          "task_name": "实现带有预填充数据的文章编辑表单",
+          "status": "todo",
+          "priority": "high",
+          "risk_level": "low",
+          "assignee": "Developer",
+          "tags": ["frontend", "form"]
+        },
+        {
+          "task_id": "TASK-203",
+          "task_name": "添加文章编辑 API 端点",
+          "status": "todo",
+          "priority": "critical",
+          "risk_level": "high",
+          "assignee": "Developer",
+          "tags": ["backend", "api"]
+        },
+        {
+          "task_id": "TASK-204",
+          "task_name": "实现文章删除功能",
+          "status": "todo",
+          "priority": "high",
+          "risk_level": "high",
+          "assignee": "Developer",
+          "tags": ["backend", "api"]
+        },
+        {
+          "task_id": "TASK-205",
+          "task_name": "设计分类管理页面 UI",
+          "status": "todo",
+          "priority": "high",
+          "risk_level": "low",
+          "assignee": "Developer",
+          "tags": ["frontend", "ui", "design"]
+        },
+        {
+          "task_id": "TASK-206",
+          "task_name": "实现分类创建表单",
+          "status": "todo",
+          "priority": "high",
+          "risk_level": "low",
+          "assignee": "Developer",
+          "tags": ["frontend", "form"]
+        },
+        {
+          "task_id": "TASK-207",
+          "task_name": "添加分类 API 端点（创建、编辑、删除）",
+          "status": "todo",
+          "priority": "critical",
+          "risk_level": "high",
+          "assignee": "Developer",
+          "tags": ["backend", "api"]
+        },
+        {
+          "task_id": "TASK-208",
+          "task_name": "更新文章创建/编辑表单以支持分类选择",
+          "status": "todo",
+          "priority": "medium",
+          "risk_level": "low",
+          "assignee": "Developer",
+          "tags": ["frontend", "form"]
+        },
+        {
+          "task_id": "TASK-209",
+          "task_name": "为删除操作添加确认对话框",
+          "status": "todo",
+          "priority": "medium",
+          "risk_level": "low",
+          "assignee": "Developer",
+          "tags": ["frontend", "ux"]
+        },
+        {
+          "task_id": "TASK-210",
+          "task_name": "收集用户对模块成熟度的反馈（文章编辑、分类管理）",
+          "status": "todo",
+          "priority": "high",
+          "risk_level": "low",
+          "assignee": "COX",
+          "tags": ["feedback", "validation", "ux"]
+        },
+        {
+          "task_id": "TASK-211",
+          "task_name": "根据用户反馈更新 app_status.json 中的模块成熟度状态",
+          "status": "todo",
+          "priority": "high",
+          "risk_level": "low",
+          "assignee": "COX",
+          "tags": ["observability", "data-update"]
+        }
+      ],
+      "modules": [
+        {
+          "module_id": "MOD-004",
+          "module_name": "文章编辑",
+          "expected_completion": 0.0
+        },
+        {
+          "module_id": "MOD-005",
+          "module_name": "分类管理",
+          "expected_completion": 0.0
+        }
+      ],
+      "assumptions": [
+        {
+          "assumption_id": "ASSUM-006",
+          "description": "用户创建文章后需要频繁编辑",
+          "validation_method": "通过分析工具跟踪编辑频率",
+          "status": "pending",
+          "impact": "medium"
+        },
+        {
+          "assumption_id": "ASSUM-007",
+          "description": "简单的分类管理（创建/编辑/删除）足够",
+          "validation_method": "测试期间的用户反馈",
+          "status": "pending",
+          "impact": "medium"
+        },
+        {
+          "assumption_id": "ASSUM-008",
+          "description": "文章删除需要确认以防止意外丢失",
+          "validation_method": "用户测试和反馈",
+          "status": "pending",
+          "impact": "high"
+        },
+        {
+          "assumption_id": "ASSUM-009",
+          "description": "分类由单一管理员用户管理",
+          "validation_method": "部署观察",
+          "status": "pending",
+          "impact": "medium"
+        }
+      ]
+    },
+    {
+      "iteration_id": "ITER-003",
+      "iteration_name": "交互功能",
+      "status": "pending",
+      "start_date": "2026-02-21",
+      "end_date": "2026-03-07",
+      "tasks": [],
+      "modules": [
+        {
+          "module_id": "MOD-006",
+          "module_name": "评论系统",
+          "expected_completion": 0.0
+        },
+        {
+          "module_id": "MOD-007",
+          "module_name": "搜索",
+          "expected_completion": 0.0
+        }
+      ],
+      "assumptions": []
+    }
+  ]
+}
