@@ -280,7 +280,7 @@ Agent 的响应：
 |------|------|------|
 | --app | 是 | app_status.json 文件路径 |
 | --module | 是 | 模块名称 |
-| --status | 是 | 目标状态：pending/developed/confirmed/optimized |
+| --status | 是 | 目标状态：pending/developed/confirmed/optimized/has_issue |
 | --rate | 否 | 完成率 0.0-1.0，默认 1.0 |
 | --notes | 否 | 备注说明 |
 
@@ -289,9 +289,9 @@ Agent 的响应：
 | 状态 | 含义 | 使用场景 |
 |------|------|----------|
 | pending | 待开发 | 模块尚未开始 |
-| developed | 已开发 | 功能已实现，待验证 |
-| confirmed | 已确认 | 功能已验证，待优化 |
-| optimized | 已优化 | 功能已完成并优化 |
+| developed | 已开发 | 功能已实现，还没放到看板上请用户表态 |
+| confirmed | 待确认 | 看板用这个值等用户表态。不是「已经确认完成」 |
+| optimized | 完美 | 用户在看板上标记为满意 |
 | has_issue | 有问题 | 用户标记了问题 |
 
 ### C. 优先级值说明

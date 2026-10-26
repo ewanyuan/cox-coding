@@ -194,10 +194,11 @@ python scripts/generate_observability_data.py \
 - **任务字段**：
   - `task_id`: 任务ID（如 TASK-001）
   - `task_name`: 任务名称（具体描述，如"设计计算器UI界面"）
-  - `status`: 任务状态（todo/in_progress/completed/delayed）
+  - `status`: 任务状态（`todo`/`in_progress`/`review`/`done`/`blocked`/`reverted`）。开工、结束和撤回由 `task_track.py` 改状态
   - `assignee`: 负责人（可选，如需要团队协作时填写）
   - `priority`: 优先级（low/medium/high/critical）
   - `tags`: 标签（可选，用于分类）
+  - `module_ids`: 这个任务属于哪些功能（模块 id 数组）。看板靠它把实际改动和功能对上，开工前必须写上
 
 **关于埋点和异常的说明**：
 - **默认为空**：脚本生成的 tracing_points 和 anomalies 均为空数组 `[]`
@@ -615,6 +616,25 @@ COX 对所有问题和任务进行优先级排序
 6. 调用skill-manager存储问题追踪信息
 7. **COX** 向用户报告已采取的观测更新措施
 
+## 改动可观测与一键撤回（必须遵守）
+
+记录和提交由脚本完成。不要自己 `git commit` 任务里的代码，不要安装 pre-commit 钩子，不要写路径白名单，也不要拦截提交。计划外的改动只在看板上提醒。
+
+同一时间只能有一个任务处于 `in_progress`。
+
+开工前：
+
+1. 在 `project_data.json` 写好任务，并填写 `module_ids`（这个任务属于哪些功能）。
+2. 运行 `python scripts/task_track.py start --project project_data.json --app app_status.json --test test_metrics.json --task TASK-001 --repo <项目目录>`。
+3. 如果项目还不是 git 仓库，先用大白话问用户是否同意开始记录版本。只有用户同意后才运行 `python scripts/task_track.py init --repo <项目目录> --agree`。用户不同意时不要 `git init`，看板不提供撤回。
+4. 如果脚本说还有没保存成版本的修改，停下来问用户：这些改动算这次任务（`--adopt`）还是先放一边（`--stash`）。不要丢弃这些修改。
+
+做完后运行 `python scripts/task_track.py finish --project project_data.json --app app_status.json --test test_metrics.json --task TASK-001 --repo <项目目录>`。一次提交只包含一个任务。
+
+绕过脚本自己提交，或一次提交混了多个任务时，看板会标成「未归属改动」，或者只能一起撤回，不能按任务拆开。
+
+撤回由用户在网页看板上确认。确认说明里要让用户看到：数据库改动、已安装的依赖和已经发布的内容都不能撤回。脚本会先在临时副本里试撤回；如果冲突，就停下来并说出后来改过同一批文件的任务，不会自动合并。不要用 `git reset --hard`、`git checkout .` 或 `git clean` 来撤回。
+
 ## 资源索引
 - **数据格式规范**：见 [references/data_format.md](references/data_format.md)（所有数据文件的格式定义、验证规则和示例）
 - **故障排查指南**：见 [references/troubleshooting.md](references/troubleshooting.md)（常见问题、错误代码和解决方法）
@@ -623,7 +643,8 @@ COX 对所有问题和任务进行优先级排序
 - **部署指南**：见 [references/deployment_guide.md](references/deployment_guide.md)（两种方案的详细部署步骤、配置说明和最佳实践）
 - **数据生成工具**：见 [scripts/generate_observability_data.py](scripts/generate_observability_data.py)（生成符合规范的可观测数据，避免大模型幻觉）
 - **数据采集工具**：见 [scripts/collect_data.py](scripts/collect_data.py)（数据格式验证和采集工具）
-- **Web界面服务器**：见 [scripts/run_web_observability.py](scripts/run_web_observability.py)（静态/Web 两种模式的界面生成）
+- **任务记录与撤回**：见 [scripts/task_track.py](scripts/task_track.py)（记下任务开始和结束的 commit，并由脚本提交；在临时副本里试撤回）
+- **Web界面服务器**：见 [scripts/run_web_observability.py](scripts/run_web_observability.py)（静态/Web 两种模式的界面生成。网页模式可以对照计划和实际改动，并一键撤回）
 - **Skill-manager存储工具**：见 [scripts/store_to_skill_manager.py](scripts/store_to_skill_manager.py)（存储部署信息和问题追踪信息到skill-manager）
 - **Web界面模板**：见 [assets/web_templates/](assets/web_templates/)（HTML模板和样式文件）
 - **Docker配置**：见 [assets/docker_compose/](assets/docker_compose/)（全面方案的完整配置）
