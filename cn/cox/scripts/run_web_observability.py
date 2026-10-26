@@ -24,17 +24,44 @@ try:
 except ImportError:
     FLASK_AVAILABLE = False
 
-# 修复 Windows 编码问题
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+def _force_utf8_stdout():
+    """修复 Windows 控制台编码。导入模块时不改 sys.stdout，避免测试里重复包装。"""
+    try:
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    except Exception:
+        pass
+
+
+def _tracker():
+    import importlib.util
+    path = Path(__file__).resolve().parent / "task_track.py"
+    name = "cox_task_track_" + Path(__file__).resolve().parents[2].name
+    loaded = sys.modules.get(name)
+    if loaded is not None and getattr(loaded, "__file__", None) == str(path):
+        return loaded
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _apply_change_ui(html, mode):
+    tracker = _tracker()
+    html = html.replace("/*__CHANGE_PANEL_JS__*/", tracker.CHANGE_PANEL_JS)
+    modal = tracker.REVERT_MODAL_HTML if mode == "web" else ""
+    return html.replace("<!--__REVERT_MODAL__-->", modal)
+
 
 class ObservabilityData:
     """可观测数据管理 (已优化)"""
-    def __init__(self, project_file, app_file, test_file):
+    def __init__(self, project_file, app_file, test_file, repo_hint=None):
         self.files = {
             'project': project_file,
             'app': app_file,
             'test': test_file
         }
+        self.repo_hint = repo_hint
         self.last_modified = {}
         self._cache = {}
 
@@ -54,10 +81,29 @@ class ObservabilityData:
 
     def get_all_data(self):
         self.load_if_changed()
+        changes = {
+            'git_repo': False,
+            'revert_available': False,
+            'tasks': {},
+            'unattributed': [],
+            'message_zh': '',
+            'message_en': '',
+        }
+        try:
+            changes = _tracker().build_observation(
+                self.files['project'],
+                self.files['app'],
+                self.repo_hint,
+                test_file=self.files['test'],
+            )
+        except Exception as exc:
+            changes['message_zh'] = f'暂时算不出实际改动。{exc}'
+            changes['message_en'] = f'Could not compute the actual changes. {exc}'
         return {
             'project': self._cache.get('project', {}),
             'app': self._cache.get('app', {}),
             'test': self._cache.get('test', {}),
+            'changes': changes,
             'last_updated': datetime.now().strftime('%H:%M:%S')
         }
 
@@ -72,7 +118,7 @@ if FLASK_AVAILABLE:
 
     @app.route('/')
     def index():
-        return render_template_string(get_dashboard_html('web'))
+        return render_template_string(_apply_change_ui(get_dashboard_html('web'), 'web'))
 
     @app.route('/api/data')
     def get_data():
@@ -162,6 +208,56 @@ if FLASK_AVAILABLE:
             return jsonify({'success': True})
         except Exception as e:
             return jsonify({'success': False, 'error': str(e)})
+
+    def _repo_directory():
+        if data_manager.repo_hint:
+            return data_manager.repo_hint
+        return str(Path(data_manager.files['project']).resolve().parent)
+
+    @app.route('/api/revert/preview', methods=['POST'])
+    def preview_revert_route():
+        body = request.json or {}
+        try:
+            payload = _tracker().preview_revert(
+                data_manager.files['project'],
+                body.get('task_id') or '',
+                repo=data_manager.repo_hint,
+                app_file=data_manager.files['app'],
+                test_file=data_manager.files['test'],
+            )
+            return jsonify(payload)
+        except Exception as exc:
+            return jsonify({'ok': False, 'code': 'error', 'can_revert': False, 'message_zh': str(exc), 'message_en': str(exc)})
+
+    @app.route('/api/revert/execute', methods=['POST'])
+    def execute_revert_route():
+        body = request.json or {}
+        try:
+            payload = _tracker().execute_revert(
+                data_manager.files['project'],
+                body.get('task_id') or '',
+                repo=data_manager.repo_hint,
+                app_file=data_manager.files['app'],
+                test_file=data_manager.files['test'],
+                confirm=bool(body.get('confirm')),
+                stash=bool(body.get('stash')),
+            )
+            data_manager.last_modified.clear()
+            return jsonify(payload)
+        except Exception as exc:
+            return jsonify({'ok': False, 'code': 'error', 'can_revert': False, 'message_zh': str(exc), 'message_en': str(exc)})
+
+    @app.route('/api/git/init', methods=['POST'])
+    def init_git_route():
+        body = request.json or {}
+        try:
+            payload = _tracker().init_repository(_repo_directory(), agree=bool(body.get('agree')))
+            if payload.get('git_repo') and payload.get('repo'):
+                data_manager.repo_hint = payload['repo']
+            data_manager.last_modified.clear()
+            return jsonify(payload)
+        except Exception as exc:
+            return jsonify({'ok': False, 'code': 'error', 'git_repo': False, 'message_zh': str(exc), 'message_en': str(exc)})
 
 def get_dashboard_html(mode='static'):
     """现代化 UI 模板 - 采用 Tailwind CSS 和 Lucid Icons (中文默认 & 语言切换)"""
@@ -253,6 +349,8 @@ def get_dashboard_html(mode='static'):
                         </h2>
                         <span class="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded" id="task-count">0 迭代</span>
                     </div>
+                    <div id="change-banner" class="mb-3"></div>
+                    <div id="unattributed-list" class="mb-3"></div>
                     <div class="space-y-3" id="task-list">
                         <!-- 动态内容 -->
                     </div>
@@ -365,6 +463,7 @@ def get_dashboard_html(mode='static'):
                     confirmed: '待确认',
                     optimized: '完美',
                     has_issue: '有问题',
+                    reverted: '已撤回',
                     unverifiable: '无法验证',
                     confirmed_true: '这是真的',
                     confirmed_false: '这是假的',
@@ -403,9 +502,10 @@ def get_dashboard_html(mode='static'):
                     validated: 'Validated',
                     invalidated: 'Invalid',
                     pending: 'Pending',
-                    confirmed: 'Confirmed',
+                    confirmed: 'Awaiting confirmation',
                     optimized: 'Perfect',
                     has_issue: 'Has Issue',
+                    reverted: 'Reverted',
                     unverifiable: 'Unverifiable',
                     confirmed_true: 'Confirmed True',
                     confirmed_false: 'Confirmed False',
@@ -463,6 +563,7 @@ def get_dashboard_html(mode='static'):
             'confirmed': { bg: 'bg-blue-500/10', text: 'text-blue-400' },
             'optimized': { bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
             'has_issue': { bg: 'bg-red-500/10', text: 'text-red-400' },
+            'reverted': { bg: 'bg-amber-500/10', text: 'text-amber-300' },
             'unverifiable': { bg: 'bg-zinc-700', text: 'text-zinc-400' },
             'confirmed_true': { bg: 'bg-emerald-500/10', text: 'text-emerald-400' },
             'confirmed_false': { bg: 'bg-red-500/10', text: 'text-red-400' },
@@ -525,8 +626,12 @@ def get_dashboard_html(mode='static'):
             }
         }
 
+        /*__CHANGE_PANEL_JS__*/
+        const DASHBOARD_MODE = 'web';
+
         function renderUI(data) {
             try {
+                renderChangeChrome(data);
                 const t = translations[currentLang];
                 document.getElementById('last-updated').textContent = data.last_updated;
                 const p = data.project;
@@ -593,9 +698,10 @@ def get_dashboard_html(mode='static'):
                             <!-- 任务列表 -->
                             <div class="p-4 space-y-2">
                                 ${(iter.tasks?.length || 0) > 0 ? iter.tasks.map(task => `
-                                    <div class="flex items-center justify-between p-3 bg-zinc-900/40 rounded-lg border border-zinc-800/30 hover:border-zinc-700/50 transition-colors">
+                                    <div class="p-3 bg-zinc-900/40 rounded-lg border border-zinc-800/30 hover:border-zinc-700/50 transition-colors">
+                                        <div class="flex items-center justify-between">
                                         <div class="flex items-center gap-3">
-                                            <div class="w-1.5 h-6 rounded-full ${task.status === 'completed' || task.status === 'done' ? 'bg-emerald-500' : task.status === 'in_progress' ? 'bg-blue-500' : 'bg-zinc-600'}"></div>
+                                            <div class="w-1.5 h-6 rounded-full ${task.status === 'reverted' ? 'bg-amber-500' : task.status === 'completed' || task.status === 'done' ? 'bg-emerald-500' : task.status === 'in_progress' ? 'bg-blue-500' : 'bg-zinc-600'}"></div>
                                             <div class="flex-1">
                                                 <p class="font-medium text-sm text-zinc-200">${task.task_name}</p>
                                                 <div class="flex items-center gap-3 mt-1 text-xs text-zinc-500">
@@ -607,6 +713,8 @@ def get_dashboard_html(mode='static'):
                                             </div>
                                         </div>
                                         ${getStatusBadge(task.status)}
+                                        </div>
+                                        ${renderTaskChanges(task, iter, data.changes)}
                                     </div>
                                 `).join('') : '<p class="text-sm text-zinc-500 text-center py-4">尚未详细计划</p>'}
                             </div>
@@ -1043,6 +1151,7 @@ def get_dashboard_html(mode='static'):
         setLanguage('zh');
         refreshData();
     </script>
+<!--__REVERT_MODAL__-->
 </body>
 </html>
     """
@@ -1113,6 +1222,8 @@ def get_static_html_template():
                         </h2>
                         <span class="text-xs text-zinc-500 bg-zinc-800 px-2 py-1 rounded" id="task-count">0 迭代</span>
                     </div>
+                    <div id="change-banner" class="mb-3"></div>
+                    <div id="unattributed-list" class="mb-3"></div>
                     <div class="space-y-3" id="task-list"></div>
                 </div>
 
@@ -1157,7 +1268,8 @@ def get_static_html_template():
             'pending': { bg: 'bg-yellow-500/10', text: 'text-yellow-400', label: '待定' },
             'confirmed': { bg: 'bg-blue-500/10', text: 'text-blue-400', label: '待确认' },
             'optimized': { bg: 'bg-emerald-500/10', text: 'text-emerald-400', label: '完美' },
-            'has_issue': { bg: 'bg-red-500/10', text: 'text-red-400', label: '有问题' }
+            'has_issue': { bg: 'bg-red-500/10', text: 'text-red-400', label: '有问题' },
+            'reverted': { bg: 'bg-amber-500/10', text: 'text-amber-300', label: '已撤回' }
         };
 
         // Priority 和 Risk Level 翻译配置
@@ -1211,8 +1323,12 @@ def get_static_html_template():
             }
         }
 
+        /*__CHANGE_PANEL_JS__*/
+        const DASHBOARD_MODE = 'static';
+
         function renderUI(data) {
             try {
+                renderChangeChrome(data);
                 const t = translations;
                 document.getElementById('last-updated').textContent = data.last_updated;
                 const p = data.project;
@@ -1263,9 +1379,10 @@ def get_static_html_template():
                                 </div>
                                 <div class="p-4 space-y-2">
                                     ${taskList.length > 0 ? taskList.map(task => `
-                                        <div class="flex items-center justify-between p-3 bg-zinc-900/40 rounded-lg border border-zinc-800/30">
+                                        <div class="p-3 bg-zinc-900/40 rounded-lg border border-zinc-800/30">
+                                            <div class="flex items-center justify-between">
                                             <div class="flex items-center gap-3">
-                                                <div class="w-1.5 h-6 rounded-full ${task.status === 'completed' || task.status === 'done' ? 'bg-emerald-500' : task.status === 'in_progress' ? 'bg-blue-500' : 'bg-zinc-600'}"></div>
+                                                <div class="w-1.5 h-6 rounded-full ${task.status === 'reverted' ? 'bg-amber-500' : task.status === 'completed' || task.status === 'done' ? 'bg-emerald-500' : task.status === 'in_progress' ? 'bg-blue-500' : 'bg-zinc-600'}"></div>
                                                 <div>
                                                     <p class="font-medium text-sm text-zinc-200">${task.task_name}</p>
                                                     <div class="flex items-center gap-3 mt-1 text-xs text-zinc-500">
@@ -1277,6 +1394,8 @@ def get_static_html_template():
                                                 </div>
                                             </div>
                                             ${getStatusBadge(task.status)}
+                                            </div>
+                                            ${renderTaskChanges(task, iter, data.changes)}
                                         </div>
                                     `).join('') : '<p class="text-sm text-zinc-500 text-center py-4">尚未详细计划</p>'}
                                 </div>
@@ -1379,6 +1498,7 @@ def get_static_html_template():
         // 静态模式固定中文，不需要 setLanguage 函数
         refreshData();
     </script>
+<!--__REVERT_MODAL__-->
 </body>
 </html>
     """
@@ -1394,25 +1514,31 @@ def generate_static_html(data_manager, output_file):
     - 用户体验好，直接打开 HTML 即可查看
     - 静态模式只提供纯展示功能，不包含交互元素
     """
-    # 1. 读取所有数据文件
-    data = {}
+    # 1. 读取所有数据文件，并按 git 算出实际改动
     for key, src_path in data_manager.files.items():
-        src_file = Path(src_path)
-        if src_file.exists():
-            with open(src_file, 'r', encoding='utf-8') as f:
-                data[key] = json.load(f)
-            print(f"[INFO] 已读取数据文件: {src_file.name}")
+        if Path(src_path).exists():
+            print(f"[INFO] 已读取数据文件: {Path(src_path).name}")
         else:
             print(f"[WARNING] 数据文件不存在: {src_path}")
-            data[key] = {}
-    
+    loaded = data_manager.get_all_data()
+    data = {
+        'project': loaded.get('project') or {},
+        'app': loaded.get('app') or {},
+        'test': loaded.get('test') or {},
+        'changes': loaded.get('changes') or {},
+    }
+
+    def _js_json(value):
+        return json.dumps(value, ensure_ascii=False).replace("<", "\\u003c")
+
     # 2. 准备内联数据 JavaScript 代码
     inline_data_js = f"""
     // 静态模式：数据已内联到 HTML 中
     const staticData = {{
-        project: {json.dumps(data['project'], ensure_ascii=False)},
-        app: {json.dumps(data['app'], ensure_ascii=False)},
-        test: {json.dumps(data['test'], ensure_ascii=False)},
+        project: {_js_json(data['project'])},
+        app: {_js_json(data['app'])},
+        test: {_js_json(data['test'])},
+        changes: {_js_json(data['changes'])},
         last_updated: new Date().toLocaleTimeString('zh-CN', {{hour: '2-digit', minute: '2-digit', second: '2-digit'}})
     }};
     
@@ -1439,11 +1565,11 @@ def generate_static_html(data_manager, output_file):
     # 3. 获取静态 HTML 模板（简化版，不含交互功能）
     html_template = get_static_html_template()
     
-    # 4. 插入内联数据到 HTML 中
-    # 在 refreshData(); 之前插入 staticData 变量定义
+    # 4. 插入内联数据到 HTML 中。只替换模板末尾那一次调用，避免碰到面板脚本里的同名调用。
     marker = "refreshData();"
     if marker in html_template:
-        html_template = html_template.replace(marker, inline_data_js + "\n        " + marker)
+        html_template = html_template.replace(marker, inline_data_js + "\n        " + marker, 1)
+    html_template = _apply_change_ui(html_template, 'static')
     
     # 5. 写入 HTML 文件
     output_file_path = Path(output_file)
@@ -1462,6 +1588,7 @@ def generate_static_html(data_manager, output_file):
 
 def main():
     global data_manager
+    _force_utf8_stdout()
     
     parser = argparse.ArgumentParser(
         description='Modern Observability Dashboard - 静态/Web 两种模式',
@@ -1478,6 +1605,7 @@ def main():
                        help='静态模式下的输出文件路径（默认: observability.html）')
     parser.add_argument('--host', default='127.0.0.1', help='Web 模式下的服务器地址')
     parser.add_argument('--port', type=int, default=5000, help='Web 模式下的服务器端口')
+    parser.add_argument('--repo', default=None, help='用户项目目录。默认从项目数据文件所在目录向上查找 Git 仓库。不会在未经同意时 git init。')
     
     args = parser.parse_args()
 
@@ -1487,7 +1615,7 @@ def main():
             print(f"[ERROR] 文件不存在: {f}")
             exit(1)
 
-    data_manager = ObservabilityData(args.project, args.app, args.test)
+    data_manager = ObservabilityData(args.project, args.app, args.test, repo_hint=args.repo)
 
     if args.mode == 'static':
         # 静态模式：生成静态 HTML

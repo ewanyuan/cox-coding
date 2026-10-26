@@ -178,9 +178,10 @@ python scripts/generate_observability_data.py \
 
 ### 模块状态管理
 
-**状态流转**：
-- pending → in_progress → developed → confirmed → optimized
-- 每个状态对应不同的完成率和验证要求
+**状态含义**（以看板为准）：
+- `pending`（待开发）→ `developed`（已开发）→ `confirmed`（待确认，等用户在看板上表态）→ `optimized`（完美，用户满意）
+- 用户标记 `has_issue`（有问题）后，下一轮优先处理
+- `confirmed` 的意思是待确认，不是「已经确认完成」
 
 ### 具体操作流程
 

@@ -280,7 +280,7 @@ Agent's response:
 |-----------|----------|-------------|
 | --app | Yes | Path to app_status.json file |
 | --module | Yes | Module name |
-| --status | Yes | Target status: pending/developed/confirmed/optimized |
+| --status | Yes | Target status: pending/developed/confirmed/optimized/has_issue |
 | --rate | No | Completion rate 0.0-1.0, default 1.0 |
 | --notes | No | Notes |
 
@@ -288,10 +288,10 @@ Agent's response:
 
 | Status | Meaning | Usage Scenario |
 |--------|---------|----------------|
-| pending | Pending development | Module not started yet |
-| developed | Developed | Function implemented, pending validation |
-| confirmed | Confirmed | Function validated, pending optimization |
-| optimized | Optimized | Function completed and optimized |
+| pending | Not started | Module not started yet |
+| developed | Developed | Implemented, not yet on the dashboard for a verdict |
+| confirmed | Awaiting confirmation | The dashboard value while the user has not judged it. Not "already confirmed complete" |
+| optimized | Perfect | The user marked the feature as satisfactory |
 | has_issue | Has issue | User marked an issue |
 
 ### C. Priority Value Explanation

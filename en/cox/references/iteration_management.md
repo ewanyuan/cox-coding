@@ -179,7 +179,9 @@ After verification is complete, I will continue to the next task.
 ### Module Status Management
 
 **Status Transitions**:
-- pending → in_progress → developed → confirmed → optimized
+- `pending` (not started) → `developed` (implemented) → `confirmed` (awaiting confirmation on the dashboard) → `optimized` (perfect; the user is satisfied)
+- `confirmed` means awaiting confirmation. It does not mean the feature is already confirmed complete
+- A user mark of `has_issue` is handled first in a later round
 - Each status corresponds to different completion rates and verification requirements
 
 ### Specific Operational Process

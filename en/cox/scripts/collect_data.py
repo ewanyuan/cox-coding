@@ -16,10 +16,10 @@ class DataValidator:
 
     # 枚举值定义
     ITERATION_STATUS = ['not_started', 'in_progress', 'completed', 'delayed']
-    TASK_STATUS = ['todo', 'in_progress', 'review', 'done', 'blocked']
+    TASK_STATUS = ['todo', 'in_progress', 'review', 'done', 'blocked', 'reverted']
     TASK_PRIORITY = ['low', 'medium', 'high', 'critical']
     ASSUMPTION_STATUS = ['pending', 'validated', 'invalidated']
-    MODULE_STATUS = ['pending', 'developed', 'confirmed', 'optimized']
+    MODULE_STATUS = ['pending', 'developed', 'confirmed', 'optimized', 'has_issue']
     TRACING_METRIC_TYPE = ['counter', 'gauge', 'histogram', 'summary']
     TRACING_STATUS = ['active', 'inactive', 'deprecated']
     ANOMALY_TYPE = ['performance', 'functional', 'integration', 'security']
@@ -119,6 +119,13 @@ class DataValidator:
             self.errors.append(
                 f"任务状态 '{task['status']}' 无效，允许的值: {self.TASK_STATUS}"
             )
+
+        if 'module_ids' in task and task['module_ids'] is not None:
+            if not isinstance(task['module_ids'], list) or not all(isinstance(item, str) for item in task['module_ids']):
+                self.errors.append("任务 module_ids 必须是字符串数组，用来表示这个任务属于哪些功能")
+        for commit_field in ('start_commit', 'end_commit', 'revert_commit'):
+            if commit_field in task and task[commit_field] is not None and not isinstance(task[commit_field], str):
+                self.errors.append(f"任务 {commit_field} 必须是字符串")
 
         # 验证优先级枚举
         if 'priority' in task and task['priority'] not in self.TASK_PRIORITY:
@@ -358,7 +365,7 @@ def main():
     update_module_parser = subparsers.add_parser('update-module', help='更新模块状态（供Agent调用）')
     update_module_parser.add_argument('--app', required=True, help='应用状态文件')
     update_module_parser.add_argument('--module', required=True, help='模块名称')
-    update_module_parser.add_argument('--status', required=True, choices=['pending', 'developed', 'confirmed', 'optimized'], help='模块状态')
+    update_module_parser.add_argument('--status', required=True, choices=['pending', 'developed', 'confirmed', 'optimized', 'has_issue'], help='模块状态')
     update_module_parser.add_argument('--rate', type=float, default=1.0, help='完成率 (0.0-1.0)')
     update_module_parser.add_argument('--notes', default='', help='备注说明')
 
@@ -487,6 +494,10 @@ def main():
                 module['last_update'] = datetime.now().strftime('%Y-%m-%d')
                 if args.notes:
                     module['notes'] = args.notes
+                if args.status == 'has_issue':
+                    module['issue_description'] = args.notes or module.get('issue_description', '')
+                elif 'issue_description' in module:
+                    module['issue_description'] = ''
                 module_found = True
                 break
 

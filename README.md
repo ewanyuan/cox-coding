@@ -101,8 +101,9 @@ Fix issues one by one   →   AI proactively requests your feedback
 Don't know what changed affected what →   Batch create improvement plans
                            Visualized dashboard display
                            ↓
-Fixes introduce new bugs →   Refactoring automatically avoids
-                           features you're satisfied with
+Fixes introduce new bugs →   The dashboard shows the plan beside
+                           the files actually changed; if you
+                           are not satisfied, revert that task
                            ↓
 Cannot form global cognition →   Human and machine achieve true consensus
 ```
@@ -113,7 +114,7 @@ Cannot form global cognition →   Human and machine achieve true consensus
 ![3_en](https://github.com/user-attachments/assets/668aff98-529c-4d8d-b1dc-4ce5c31ff92a)
 
 
-- AI proactively requests your feedback on each feature's completion level (satisfied/needs improvement), automatically identifying and protecting features you're already satisfied with during refactoring
+- AI proactively requests your feedback on each feature's completion level (satisfied/needs improvement). The dashboard lists, per task, the files that actually changed (computed from Git, not reported by the AI) beside what this round planned to change. Anything outside the plan is a gentle unplanned notice and is never blocked. If a task is unsatisfying, you can revert that task's code in one click while keeping history. Database changes, installed dependencies, and anything already published cannot be reverted
 <img width="1344" height="768" alt="4_en" src="https://github.com/user-attachments/assets/7d895441-08ed-4e31-825f-df55552f29f1" />
 
 

@@ -1,4 +1,6 @@
 *.pyc
+__pycache__/
+*.py[cod]
 cn/cox/app_status.json
 cn/cox/project_data.json
 cn/cox/test_data.json

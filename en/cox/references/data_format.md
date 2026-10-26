@@ -28,7 +28,11 @@
           "assignee": "Responsible Person",
           "priority": "Priority",
           "risk_level": "Risk Level",
-          "tags": ["Tag1", "Tag2"]
+          "tags": ["Tag1", "Tag2"],
+          "module_ids": ["feature id this task belongs to"],
+          "start_commit": "commit at start, written only by task_track.py",
+          "end_commit": "commit at end, written only by task_track.py",
+          "revert_commit": "new commit created by a revert, written only by task_track.py"
         }
       ],
       "modules": [
@@ -66,11 +70,17 @@
 | iterations[].tasks | array | Yes | List of tasks |
 | iterations[].tasks[].task_id | string | Yes | Unique task identifier |
 | iterations[].tasks[].task_name | string | Yes | Task name |
-| iterations[].tasks[].status | string | Yes | Task status: `todo`/`in_progress`/`review`/`done`/`blocked` |
+| iterations[].tasks[].status | string | Yes | Task status: `todo`/`in_progress`/`review`/`done`/`blocked`/`reverted`. `reverted` means this task's code was reverted and the history was kept |
 | iterations[].tasks[].assignee | string | No | Responsible person |
 | iterations[].tasks[].priority | string | No | Priority: `low`/`medium`/`high`/`critical` |
 | iterations[].tasks[].risk_level | string | No | Risk level: `low`/`high`, Agent evaluates automatically based on modification scope and impact |
 | iterations[].tasks[].tags | array | No | List of tags |
+| iterations[].tasks[].module_ids | array | No | Features this task belongs to. An array of strings matching `modules[].module_id` on the iteration (or `module_id` in app status). The dashboard uses this link; it does not guess which feature a file belongs to |
+| iterations[].tasks[].start_commit | string | No | Commit recorded when the task starts. Written only by `scripts/task_track.py start` |
+| iterations[].tasks[].end_commit | string | No | Commit created when the task ends. Written only by `scripts/task_track.py finish`. The AI must not commit the task's code itself |
+| iterations[].tasks[].revert_commit | string | No | The new commit added when this task is reverted. The original commit is not deleted |
+
+The list of files actually changed is not stored in JSON. The dashboard computes it with git, from `start_commit` to `end_commit`. If a task's `module_ids` include a feature that this round's `modules` did not plan, the dashboard shows an unplanned notice only. It does not block the change. A commit that mixes several tasks can only be reverted together. A commit tied to no task is labeled unattributed changes.
 | iterations[].modules | array | Yes | List of involved modules |
 | iterations[].modules[].module_id | string | Yes | Unique module identifier |
 | iterations[].modules[].module_name | string | Yes | Module name |
@@ -179,17 +189,21 @@
 | last_updated | string | Yes | Last update time, format: YYYY-MM-DD HH:MM:SS |
 | modules | array | Yes | List of modules |
 | modules[].module_name | string | Yes | Module name |
-| modules[].status | string | Yes | Module status: `pending`/`developed`/`confirmed`/`optimized` |
+| modules[].status | string | Yes | Module status: `pending`/`developed`/`confirmed`/`optimized`/`has_issue` |
 | modules[].owner | string | No | Responsible person |
 | modules[].completion_rate | number | No | Completion rate, range 0.0-1.0 |
 | modules[].last_update | string | No | Last update time, format: YYYY-MM-DD HH:MM:SS |
 | modules[].notes | string | No | Notes |
 
 ### Module Status Enum Values Description
-- `pending`: Pending development
-- `developed`: Developed, awaiting confirmation
-- `confirmed`: Confirmed complete
-- `optimized`: Confirmed, awaiting optimization
+
+The dashboard wording is the source of truth. `confirmed` means awaiting confirmation. It does not mean the feature is already confirmed complete.
+
+- `pending`: Not started
+- `developed`: Implemented, not yet on the dashboard for the user to judge
+- `confirmed`: Awaiting confirmation. Shown on the dashboard until the user says it is satisfactory or reports a problem
+- `optimized`: Perfect. The user marked this feature as satisfactory
+- `has_issue`: Has a problem. The user marked an issue; `issue_description` holds the description
 
 ### Complete Example
 ```json

@@ -28,7 +28,11 @@
           "assignee": "负责人",
           "priority": "优先级",
           "risk_level": "风险等级",
-          "tags": ["标签1", "标签2"]
+          "tags": ["标签1", "标签2"],
+          "module_ids": ["这个任务所属的功能 id"],
+          "start_commit": "开工时的 commit，仅由 task_track.py 写入",
+          "end_commit": "结束时的 commit，仅由 task_track.py 写入",
+          "revert_commit": "撤回时新增的 commit，仅由 task_track.py 写入"
         }
       ],
       "modules": [
@@ -66,11 +70,17 @@
 | iterations[].tasks | array | 是 | 任务列表 |
 | iterations[].tasks[].task_id | string | 是 | 任务唯一标识 |
 | iterations[].tasks[].task_name | string | 是 | 任务名称 |
-| iterations[].tasks[].status | string | 是 | 任务状态：`todo`/`in_progress`/`review`/`done`/`blocked` |
+| iterations[].tasks[].status | string | 是 | 任务状态：`todo`/`in_progress`/`review`/`done`/`blocked`/`reverted`。`reverted` 表示这次任务的代码已经撤回，历史仍保留 |
 | iterations[].tasks[].assignee | string | 否 | 负责人 |
 | iterations[].tasks[].priority | string | 否 | 优先级：`low`/`medium`/`high`/`critical` |
 | iterations[].tasks[].risk_level | string | 否 | 风险等级：`low`/`high`，Agent 根据修改范围和影响自动评估 |
 | iterations[].tasks[].tags | array | 否 | 标签列表 |
+| iterations[].tasks[].module_ids | array | 否 | 这个任务属于哪些功能。字符串数组，对应迭代 `modules[].module_id`（或应用状态里的 `module_id`）。看板靠它把实际改动和功能对上，不猜测文件路径 |
+| iterations[].tasks[].start_commit | string | 否 | 任务开始时的 commit。只由 `scripts/task_track.py start` 写入 |
+| iterations[].tasks[].end_commit | string | 否 | 任务结束时的 commit。只由 `scripts/task_track.py finish` 提交并写入。不要让 AI 自己提交这次任务的代码 |
+| iterations[].tasks[].revert_commit | string | 否 | 撤回这次任务时新增的 commit。不删除原来的提交 |
+
+实际改了哪些文件不写进 JSON。看板用 git 对比 `start_commit` 和 `end_commit` 计算。若任务的 `module_ids` 里有本轮 `modules` 没有的功能，看板只显示「计划外」提醒，不拦截、不拒绝提交。一次提交若对应多个任务，只能一起撤回；没有归到任务上的提交显示为「未归属改动」。
 | iterations[].modules | array | 是 | 涉及的模块列表 |
 | iterations[].modules[].module_id | string | 是 | 模块唯一标识 |
 | iterations[].modules[].module_name | string | 是 | 模块名称 |
@@ -179,17 +189,21 @@
 | last_updated | string | 是 | 最后更新时间，格式：YYYY-MM-DD HH:MM:SS |
 | modules | array | 是 | 模块列表 |
 | modules[].module_name | string | 是 | 模块名称 |
-| modules[].status | string | 是 | 模块状态：`pending`/`developed`/`confirmed`/`optimized` |
+| modules[].status | string | 是 | 模块状态：`pending`/`developed`/`confirmed`/`optimized`/`has_issue` |
 | modules[].owner | string | 否 | 负责人 |
 | modules[].completion_rate | number | 否 | 完成率，范围0.0-1.0 |
 | modules[].last_update | string | 否 | 最后更新时间，格式：YYYY-MM-DD HH:MM:SS |
 | modules[].notes | string | 否 | 备注信息 |
 
 ### 模块状态枚举值说明
+
+含义以看板显示为准。`confirmed` 是「待确认」，不是「已经确认完成」。
+
 - `pending`：待开发
-- `developed`：已开发待确认
-- `confirmed`：已确认完成
-- `optimized`：已确认待优化
+- `developed`：已开发。功能写完了，还没放到看板上请用户表态
+- `confirmed`：待确认。已经出现在看板上，等用户说满意还是有问题
+- `optimized`：完美。用户在看板上标记为满意
+- `has_issue`：有问题。用户在看板上标记了问题；`issue_description` 记录具体描述
 
 ### 完整示例
 ```json
